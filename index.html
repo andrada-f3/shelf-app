@@ -312,7 +312,7 @@
       <h2>Manage lists</h2>
       <button class="close-x" data-close="manageOverlay">✕</button>
     </div>
-    <p class="helper" style="margin-top:0;">Tap the ✕ on a tag to remove it. Items already using it keep it, it just won't be offered for new items. Each list needs at least one option.</p>
+    <p class="helper" style="margin-top:0;">Tap the ✕ on a tag to remove it. If items are using it, you'll be asked to confirm — deleting clears that field on those items. Each list needs at least one option.</p>
 
     <div class="manage-section">
       <label style="margin-top:0;">Categories</label>
@@ -456,28 +456,33 @@ async function addCustomValue(kind, value){
 async function addListValue(field, value){
   value = value.trim();
   if(!value) return;
-  const ref = db.collection('meta').doc('settings');
-  await db.runTransaction(async t=>{
-    const doc = await t.get(ref);
-    const cur = (doc.exists && doc.data()[field]) || DEFAULTS_MAP[field];
-    if(!cur.includes(value)) t.set(ref, {[field]: [...cur, value]}, {merge:true});
-  });
+  await db.collection('meta').doc('settings').set(
+    {[field]: firebase.firestore.FieldValue.arrayUnion(value)}, {merge:true}
+  );
 }
 async function deleteListValue(field, value){
   const cur = field==='categories' ? categories : field==='shops' ? shops : locations;
   if(cur.length <= 1){ showToast("Keep at least one"); return; }
   const fieldSingular = field==='categories' ? 'category' : field==='shops' ? 'shop' : 'location';
-  const usageCount = items.filter(i=>i[fieldSingular]===value).length;
-  const msg = usageCount>0
-    ? `${usageCount} item${usageCount===1?'':'s'} currently use "${value}". They'll keep it, but it won't be offered for new items. Remove it from the list?`
+  const affected = items.filter(i=>i[fieldSingular]===value);
+  const msg = affected.length>0
+    ? `${affected.length} item${affected.length===1?'':'s'} currently use "${value}" as their ${fieldSingular}. Deleting it will clear that field on those items — they'll show as unset. Continue?`
     : `Remove "${value}" from the list?`;
   if(!confirm(msg)) return;
-  const ref = db.collection('meta').doc('settings');
-  await db.runTransaction(async t=>{
-    const doc = await t.get(ref);
-    const curArr = (doc.exists && doc.data()[field]) || DEFAULTS_MAP[field];
-    t.set(ref, {[field]: curArr.filter(v=>v!==value)}, {merge:true});
+  const batch = db.batch();
+  affected.forEach(i=>{
+    batch.update(db.collection('items').doc(i.id), {
+      [fieldSingular]: null,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
   });
+  batch.update(db.collection('meta').doc('settings'), {
+    [field]: firebase.firestore.FieldValue.arrayRemove(value)
+  });
+  try{
+    await batch.commit();
+    showToast(`"${value}" removed`);
+  }catch(err){ showToast("Couldn't remove: " + err.message); }
 }
 
 /* ---------- freshness / low-stock logic ---------- */
