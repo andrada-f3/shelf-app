@@ -170,6 +170,18 @@
     background:var(--amber-bg);color:var(--amber);font-weight:500;
   }
   .status-banner.show{display:block;}
+  .status-banner.offline{background:#DEE4EA;color:#3A5A78;}
+
+  .manage-section{margin-top:18px;}
+  .manage-chip{
+    display:inline-flex;align-items:center;gap:6px;font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;
+    padding:6px 6px 6px 11px;border-radius:20px;border:1px solid var(--line);background:var(--card);color:var(--ink);
+    margin:0 6px 6px 0;
+  }
+  .manage-chip button{
+    background:var(--red-bg);color:var(--red);border:none;border-radius:50%;width:18px;height:18px;
+    font-size:11px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;
+  }
 </style>
 </head>
 <body>
@@ -181,11 +193,13 @@
   <div class="toolbar">
     <input class="search" id="searchInput" placeholder="Search items…" autocomplete="off">
     <button class="icon-btn" id="sortBtn" title="Sort">⇅</button>
+    <button class="icon-btn" id="manageBtn" title="Manage categories, shops, locations">⚙</button>
   </div>
   <div class="filter-row" id="filterRow"></div>
 </header>
 
 <div id="statusBanner" class="status-banner"></div>
+<div id="offlineBanner" class="status-banner offline"></div>
 
 <main>
   <div id="listRoot"></div>
@@ -272,7 +286,11 @@
       <button class="close-x" data-close="exportOverlay">✕</button>
     </div>
     <label style="margin-top:0;">Categories to include</label>
-    <div class="export-cats" id="exportCats"></div>
+    <div class="export-cats" id="exportCatsQuick">
+      <span class="chip" data-excat-all="1">All categories</span>
+      <span class="chip" data-excat-none="1">None</span>
+    </div>
+    <div class="export-cats" id="exportCats" style="margin-top:6px;"></div>
 
     <label>Shop</label>
     <div class="export-shops" id="exportShops"></div>
@@ -284,6 +302,44 @@
 
     <div class="export-out" id="exportOut">Pick your filters above — the list builds automatically.</div>
     <button class="copy-btn" id="copyBtn">Copy to clipboard</button>
+  </div>
+</div>
+
+<!-- Manage Lists Sheet -->
+<div class="overlay" id="manageOverlay">
+  <div class="sheet">
+    <div class="sheet-head">
+      <h2>Manage lists</h2>
+      <button class="close-x" data-close="manageOverlay">✕</button>
+    </div>
+    <p class="helper" style="margin-top:0;">Tap the ✕ on a tag to remove it. Items already using it keep it, it just won't be offered for new items. Each list needs at least one option.</p>
+
+    <div class="manage-section">
+      <label style="margin-top:0;">Categories</label>
+      <div id="manageCats"></div>
+      <div class="add-new-inline">
+        <input id="manageCatsNew" placeholder="New category name">
+        <button type="button" data-manageadd="categories">Add</button>
+      </div>
+    </div>
+
+    <div class="manage-section">
+      <label>Shops</label>
+      <div id="manageShops"></div>
+      <div class="add-new-inline">
+        <input id="manageShopsNew" placeholder="New shop name">
+        <button type="button" data-manageadd="shops">Add</button>
+      </div>
+    </div>
+
+    <div class="manage-section">
+      <label>Locations</label>
+      <div id="manageLocations"></div>
+      <div class="add-new-inline">
+        <input id="manageLocationsNew" placeholder="New location name">
+        <button type="button" data-manageadd="locations">Add</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -313,10 +369,26 @@ if (!CONFIG_IS_SET){
   banner.classList.add('show');
 }
 
+function updateOnlineBanner(){
+  const ob = document.getElementById('offlineBanner');
+  if(!navigator.onLine){
+    ob.textContent = "You're offline — showing the last synced data. Changes will save once you're back online.";
+    ob.classList.add('show');
+  } else {
+    ob.classList.remove('show');
+  }
+}
+window.addEventListener('online', updateOnlineBanner);
+window.addEventListener('offline', updateOnlineBanner);
+updateOnlineBanner();
+
 let db = null, auth = null, currentUser = null;
 if (CONFIG_IS_SET){
   firebase.initializeApp(firebaseConfig);
   db = firebase.firestore();
+  db.enablePersistence({synchronizeTabs:true}).catch(()=>{
+    /* Persistence unavailable (private browsing, or open in >1 tab without sync) — app still works online. */
+  });
   auth = firebase.auth();
   auth.signInAnonymously().catch(err => {
     banner.textContent = "Couldn't connect: " + err.message;
@@ -343,35 +415,68 @@ let sortMode = "expiry"; // expiry | name | qty
 let searchTerm = "";
 
 /* ---------- data init & sync ---------- */
+const DEFAULTS_MAP = {categories:DEFAULT_CATEGORIES, shops:DEFAULT_SHOPS, locations:DEFAULT_LOCATIONS};
+
 function initData(){
   db.collection('meta').doc('settings').onSnapshot(doc=>{
-    const d = doc.data() || {};
-    categories = mergeUnique(DEFAULT_CATEGORIES, d.customCategories);
-    shops = mergeUnique(DEFAULT_SHOPS, d.customShops);
-    locations = mergeUnique(DEFAULT_LOCATIONS, d.customLocations);
+    if(!doc.exists){ seedDefaultsIfMissing(); return; }
+    const d = doc.data();
+    categories = (d.categories && d.categories.length) ? d.categories : DEFAULT_CATEGORIES;
+    shops = (d.shops && d.shops.length) ? d.shops : DEFAULT_SHOPS;
+    locations = (d.locations && d.locations.length) ? d.locations : DEFAULT_LOCATIONS;
     populateSelects();
     renderFilterRow();
     renderExportFilters();
+    renderManageSheet();
   }, err => showToast("Sync error: " + err.message));
 
   db.collection('items').orderBy('name').onSnapshot(snap=>{
     items = snap.docs.map(d=>({id:d.id, ...d.data()}));
     renderList();
+    renderManageSheet();
   }, err => showToast("Sync error: " + err.message));
 }
-function mergeUnique(defaults, custom){
-  const c = Array.isArray(custom) ? custom : [];
-  return [...defaults, ...c.filter(x=>!defaults.includes(x))];
+async function seedDefaultsIfMissing(){
+  const ref = db.collection('meta').doc('settings');
+  try{
+    await db.runTransaction(async t=>{
+      const doc = await t.get(ref);
+      if(!doc.exists){
+        t.set(ref, {categories:DEFAULT_CATEGORIES, shops:DEFAULT_SHOPS, locations:DEFAULT_LOCATIONS});
+      }
+    });
+  }catch(e){ /* another device may have seeded it first — fine */ }
 }
+const KIND_FIELD = {category:'categories', shop:'shops', location:'locations'};
 async function addCustomValue(kind, value){
   value = value.trim();
   if(!value) return;
-  const field = kind === 'category' ? 'customCategories' : kind === 'shop' ? 'customShops' : 'customLocations';
+  await addListValue(KIND_FIELD[kind], value);
+}
+async function addListValue(field, value){
+  value = value.trim();
+  if(!value) return;
   const ref = db.collection('meta').doc('settings');
   await db.runTransaction(async t=>{
     const doc = await t.get(ref);
-    const cur = (doc.exists && doc.data()[field]) || [];
+    const cur = (doc.exists && doc.data()[field]) || DEFAULTS_MAP[field];
     if(!cur.includes(value)) t.set(ref, {[field]: [...cur, value]}, {merge:true});
+  });
+}
+async function deleteListValue(field, value){
+  const cur = field==='categories' ? categories : field==='shops' ? shops : locations;
+  if(cur.length <= 1){ showToast("Keep at least one"); return; }
+  const fieldSingular = field==='categories' ? 'category' : field==='shops' ? 'shop' : 'location';
+  const usageCount = items.filter(i=>i[fieldSingular]===value).length;
+  const msg = usageCount>0
+    ? `${usageCount} item${usageCount===1?'':'s'} currently use "${value}". They'll keep it, but it won't be offered for new items. Remove it from the list?`
+    : `Remove "${value}" from the list?`;
+  if(!confirm(msg)) return;
+  const ref = db.collection('meta').doc('settings');
+  await db.runTransaction(async t=>{
+    const doc = await t.get(ref);
+    const curArr = (doc.exists && doc.data()[field]) || DEFAULTS_MAP[field];
+    t.set(ref, {[field]: curArr.filter(v=>v!==value)}, {merge:true});
   });
 }
 
@@ -382,16 +487,26 @@ function daysUntil(dateStr){
   const target = new Date(dateStr + "T00:00:00");
   return Math.round((target - today) / 86400000);
 }
+function formatDuration(absDays){
+  if(absDays < 30) return `${absDays}d`;
+  if(absDays < 365){
+    const months = Math.floor(absDays/30), rem = absDays%30;
+    return rem>0 ? `${months}mo ${rem}d` : `${months}mo`;
+  }
+  const years = Math.floor(absDays/365), remDays = absDays%365, months = Math.floor(remDays/30);
+  return months>0 ? `${years}y ${months}mo` : `${years}y`;
+}
 function freshnessStatus(item){
   const d = daysUntil(item.expiryDate);
   if(d === null) return null;
-  if(d < 0) return {level:'expired', label:'Expired'};
-  if(d <= 7) return {level:'soon', label: d===0 ? 'Expires today' : `${d}d left`};
-  return {level:'ok', label: `${d}d left`};
+  if(d < 0) return {level:'expired', label: `Expired ${formatDuration(Math.abs(d))} ago`};
+  if(d === 0) return {level:'soon', label:'Expires today'};
+  if(d <= 7) return {level:'soon', label: `${d}d left`};
+  return {level:'ok', label: `${formatDuration(d)} left`};
 }
 function lowStockStatus(item){
   if(item.lowStockThreshold == null || item.lowStockThreshold === '') return null;
-  return item.quantity <= Number(item.lowStockThreshold);
+  return item.quantity < Number(item.lowStockThreshold);
 }
 
 /* ---------- rendering ---------- */
@@ -424,6 +539,35 @@ function renderExportFilters(){
       `<span class="chip ${exportState.shop===s?'on':''}" data-exshop="${esc(s)}">${esc(s)}</span>`
     ).join('');
 }
+function renderManageSheet(){
+  renderManageGroup('manageCats', categories, 'categories');
+  renderManageGroup('manageShops', shops, 'shops');
+  renderManageGroup('manageLocations', locations, 'locations');
+}
+function renderManageGroup(rootId, list, field){
+  const root = document.getElementById(rootId);
+  root.innerHTML = list.map(v=>
+    `<span class="manage-chip">${esc(v)}<button data-delvalue="${esc(v)}" data-delfield="${field}">✕</button></span>`
+  ).join('');
+}
+document.getElementById('manageBtn').onclick = ()=>{
+  renderManageSheet();
+  document.getElementById('manageOverlay').classList.add('show');
+};
+document.getElementById('manageOverlay').addEventListener('click', e=>{
+  const btn = e.target.closest('[data-delvalue]');
+  if(btn) deleteListValue(btn.dataset.delfield, btn.dataset.delvalue);
+});
+document.querySelectorAll('[data-manageadd]').forEach(btn=>{
+  btn.onclick = ()=>{
+    const field = btn.dataset.manageadd;
+    const inputId = 'manage' + field[0].toUpperCase() + field.slice(1) + 'New';
+    const input = document.getElementById(inputId);
+    addListValue(field, input.value);
+    input.value = '';
+  };
+});
+
 function renderList(){
   const root = document.getElementById('listRoot');
   let list = items.filter(i=>{
@@ -613,6 +757,14 @@ document.getElementById('exportCats').addEventListener('click', e=>{
   if(exportState.cats.has(c)) exportState.cats.delete(c); else exportState.cats.add(c);
   renderExportFilters(); buildExportText();
 });
+document.getElementById('exportCatsQuick').addEventListener('click', e=>{
+  if(e.target.closest('[data-excat-all]')){
+    exportState.cats = new Set(categories.filter(c=>items.some(i=>i.category===c)));
+  } else if(e.target.closest('[data-excat-none]')){
+    exportState.cats = new Set();
+  } else return;
+  renderExportFilters(); buildExportText();
+});
 document.getElementById('exportShops').addEventListener('click', e=>{
   const s = e.target.closest('[data-exshop]')?.dataset.exshop;
   if(s===undefined) return;
@@ -624,7 +776,7 @@ document.getElementById('exportLowOnly').addEventListener('change', e=>{
 });
 function buildExportText(){
   let list = items.filter(i=>{
-    if(exportState.cats.size>0 && !exportState.cats.has(i.category)) return false;
+    if(!exportState.cats.has(i.category)) return false;
     if(exportState.shop && i.shop !== exportState.shop) return false;
     if(exportState.lowOnly){
       const fresh = freshnessStatus(i);
