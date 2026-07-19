@@ -609,20 +609,20 @@ function renderList(){
     if(low) badges += `<span class="badge low">Low stock</span>`;
     const metaBits = [item.category, item.shop, item.location].filter(Boolean);
     return `
-      <div class="item" data-id="${item.id}">
+      <div class="item" data-id="${esc(item.id)}">
         <span class="dot" style="background:${color}"></span>
-        <div class="item-main" data-open="${item.id}">
+        <div class="item-main" data-open="${esc(item.id)}">
           <div class="item-name">${esc(item.name)}</div>
           <div class="item-meta">
-            <span class="mono">${item.quantity} ${esc(item.unit||'')}</span>
+            <span class="mono">${esc(item.quantity)} ${esc(item.unit||'')}</span>
             <span>${metaBits.map(esc).join(' · ')}</span>
             ${badges}
           </div>
         </div>
         <div class="qty-ctrl">
-          <button class="qty-btn" data-adj="${item.id}:-1">−</button>
-          <span class="qty-val mono">${item.quantity}</span>
-          <button class="qty-btn" data-adj="${item.id}:1">+</button>
+          <button class="qty-btn" data-adj="${esc(item.id)}:-1">−</button>
+          <span class="qty-val mono">${esc(item.quantity)}</span>
+          <button class="qty-btn" data-adj="${esc(item.id)}:1">+</button>
         </div>
       </div>`;
   }).join('');
