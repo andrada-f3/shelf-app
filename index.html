@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Shelf — household inventory</title>
+<meta name="theme-color" content="#F0F2EA">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F0F2EA;
+    --card:#FBFAF5;
+    --ink:#2B2A26;
+    --ink-soft:#6B6A60;
+    --line:#DAD6C6;
+    --green:#2F6B4F;
+    --green-bg:#E3EDE6;
+    --amber:#B8752A;
+    --amber-bg:#F3E7D4;
+    --red:#A63D33;
+    --red-bg:#F3DEDB;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--paper);color:var(--ink);font-family:'Inter',sans-serif;-webkit-tap-highlight-color:transparent;}
+  body{padding-bottom:88px;}
+  h1,h2,h3{font-family:'Archivo',sans-serif;margin:0;}
+  .mono{font-family:'IBM Plex Mono',monospace;}
+
+  /* header */
+  header{
+    padding:22px 18px 16px;
+    background:var(--paper);
+    position:sticky;top:0;z-index:10;
+    border-bottom:1px solid var(--line);
+  }
+  .label-tag{
+    display:inline-flex;align-items:center;gap:6px;
+    background:var(--ink);color:var(--paper);
+    font-family:'Archivo',sans-serif;font-weight:800;font-size:12px;letter-spacing:.14em;
+    padding:5px 10px 4px;border-radius:3px;text-transform:uppercase;
+  }
+  header h1{font-size:26px;font-weight:800;margin-top:10px;letter-spacing:-.01em;}
+  header p{margin:2px 0 0;color:var(--ink-soft);font-size:13px;}
+
+  /* search + filter bar */
+  .toolbar{display:flex;gap:8px;margin-top:14px;}
+  .search{
+    flex:1;background:var(--card);border:1px solid var(--line);border-radius:10px;
+    padding:10px 12px;font-size:14px;font-family:'Inter',sans-serif;color:var(--ink);
+  }
+  .search:focus{outline:2px solid var(--green);outline-offset:-1px;}
+  .icon-btn{
+    background:var(--card);border:1px solid var(--line);border-radius:10px;
+    width:42px;height:42px;display:flex;align-items:center;justify-content:center;
+    font-size:17px;cursor:pointer;color:var(--ink);
+  }
+  .icon-btn.active{background:var(--green);border-color:var(--green);color:#fff;}
+
+  .filter-row{display:flex;gap:7px;overflow-x:auto;margin-top:10px;padding-bottom:2px;}
+  .filter-row::-webkit-scrollbar{display:none;}
+  .chip{
+    flex:0 0 auto;font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;
+    padding:6px 11px;border-radius:20px;border:1px solid var(--line);background:var(--card);
+    color:var(--ink-soft);cursor:pointer;white-space:nowrap;
+  }
+  .chip.on{background:var(--ink);color:var(--paper);border-color:var(--ink);}
+
+  /* list */
+  main{padding:14px 14px 0;max-width:640px;margin:0 auto;}
+  .section-label{
+    font-family:'Archivo',sans-serif;font-weight:700;font-size:11px;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--ink-soft);margin:18px 4px 8px;
+  }
+  .item{
+    background:var(--card);border:1px solid var(--line);border-radius:12px;
+    padding:12px 13px;margin-bottom:8px;display:flex;gap:11px;align-items:center;
+  }
+  .item .dot{width:9px;height:9px;border-radius:50%;flex:0 0 auto;}
+  .item-main{flex:1;min-width:0;}
+  .item-name{font-weight:600;font-size:15px;line-height:1.25;}
+  .item-meta{font-size:12px;color:var(--ink-soft);margin-top:2px;display:flex;flex-wrap:wrap;gap:5px 8px;}
+  .badge{
+    font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;padding:2px 7px;border-radius:5px;
+  }
+  .badge.ok{background:var(--green-bg);color:var(--green);}
+  .badge.soon{background:var(--amber-bg);color:var(--amber);}
+  .badge.expired{background:var(--red-bg);color:var(--red);}
+  .badge.low{background:var(--amber-bg);color:var(--amber);}
+
+  .qty-ctrl{display:flex;align-items:center;gap:0;flex:0 0 auto;}
+  .qty-btn{
+    width:30px;height:30px;border-radius:8px;border:1px solid var(--line);background:#fff;
+    font-size:16px;font-weight:600;color:var(--ink);cursor:pointer;display:flex;align-items:center;justify-content:center;
+  }
+  .qty-val{width:48px;text-align:center;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:13px;}
+
+  .empty{text-align:center;padding:60px 20px;color:var(--ink-soft);}
+  .empty h3{font-size:16px;margin-bottom:6px;color:var(--ink);}
+  .empty p{font-size:13px;margin:0;}
+
+  /* fab */
+  .fab-row{
+    position:fixed;bottom:18px;left:0;right:0;display:flex;justify-content:center;gap:10px;z-index:20;
+  }
+  .fab{
+    background:var(--ink);color:var(--paper);border:none;border-radius:26px;
+    padding:14px 22px;font-family:'Archivo',sans-serif;font-weight:700;font-size:14px;
+    display:flex;align-items:center;gap:7px;box-shadow:0 6px 18px rgba(43,42,38,.25);cursor:pointer;
+  }
+  .fab.secondary{background:var(--card);color:var(--ink);border:1px solid var(--line);box-shadow:0 4px 12px rgba(43,42,38,.12);}
+
+  /* modal */
+  .overlay{
+    position:fixed;inset:0;background:rgba(43,42,38,.42);display:none;align-items:flex-end;z-index:50;
+  }
+  .overlay.show{display:flex;}
+  .sheet{
+    background:var(--paper);width:100%;max-height:92vh;overflow-y:auto;border-radius:18px 18px 0 0;
+    padding:18px 18px 28px;animation:up .18s ease-out;
+  }
+  @keyframes up{from{transform:translateY(24px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+  .sheet-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
+  .sheet-head h2{font-size:18px;}
+  .close-x{background:none;border:none;font-size:20px;color:var(--ink-soft);cursor:pointer;padding:4px 8px;}
+
+  label{display:block;font-size:12px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;text-transform:uppercase;letter-spacing:.06em;}
+  input,select,textarea{
+    width:100%;padding:11px 12px;border-radius:9px;border:1px solid var(--line);background:#fff;
+    font-family:'Inter',sans-serif;font-size:14px;color:var(--ink);
+  }
+  textarea{resize:vertical;min-height:56px;}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .add-new-inline{display:flex;gap:8px;margin-top:8px;}
+  .add-new-inline input{flex:1;}
+  .add-new-inline button{
+    background:var(--green);color:#fff;border:none;border-radius:9px;padding:0 14px;font-weight:600;font-size:13px;cursor:pointer;
+  }
+  .primary-btn{
+    width:100%;background:var(--ink);color:var(--paper);border:none;border-radius:12px;padding:14px;
+    font-family:'Archivo',sans-serif;font-weight:700;font-size:15px;margin-top:20px;cursor:pointer;
+  }
+  .danger-btn{
+    width:100%;background:none;color:var(--red);border:1px solid var(--red-bg);border-radius:12px;padding:12px;
+    font-weight:600;font-size:13px;margin-top:10px;cursor:pointer;
+  }
+  .helper{font-size:11px;color:var(--ink-soft);margin-top:4px;}
+
+  .export-cats,.export-shops{display:flex;flex-wrap:wrap;gap:7px;margin-top:8px;}
+  .export-out{
+    margin-top:16px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px;
+    font-family:'IBM Plex Mono',monospace;font-size:12.5px;white-space:pre-wrap;max-height:260px;overflow-y:auto;
+  }
+  .copy-btn{
+    width:100%;background:var(--green);color:#fff;border:none;border-radius:12px;padding:13px;
+    font-family:'Archivo',sans-serif;font-weight:700;font-size:14px;margin-top:10px;cursor:pointer;
+  }
+  .toast{
+    position:fixed;bottom:100px;left:50%;transform:translateX(-50%);
+    background:var(--ink);color:var(--paper);padding:10px 18px;border-radius:20px;font-size:13px;
+    font-weight:600;z-index:100;opacity:0;pointer-events:none;transition:opacity .2s;
+  }
+  .toast.show{opacity:1;}
+
+  .status-banner{
+    display:none;margin:0 4px 12px;padding:10px 12px;border-radius:10px;font-size:12.5px;
+    background:var(--amber-bg);color:var(--amber);font-weight:500;
+  }
+  .status-banner.show{display:block;}
+</style>
+</head>
+<body>
+
+<header>
+  <span class="label-tag">Shared &amp; live</span>
+  <h1>Shelf</h1>
+  <p>What's in the house, and when it runs out.</p>
+  <div class="toolbar">
+    <input class="search" id="searchInput" placeholder="Search items…" autocomplete="off">
+    <button class="icon-btn" id="sortBtn" title="Sort">⇅</button>
+  </div>
+  <div class="filter-row" id="filterRow"></div>
+</header>
+
+<div id="statusBanner" class="status-banner"></div>
+
+<main>
+  <div id="listRoot"></div>
+</main>
+
+<div class="fab-row">
+  <button class="fab secondary" id="exportFab">↗ Export list</button>
+  <button class="fab" id="addFab">+ Add item</button>
+</div>
+
+<!-- Add/Edit Item Sheet -->
+<div class="overlay" id="itemOverlay">
+  <div class="sheet">
+    <div class="sheet-head">
+      <h2 id="itemFormTitle">Add item</h2>
+      <button class="close-x" data-close="itemOverlay">✕</button>
+    </div>
+    <input type="hidden" id="editingId">
+
+    <label>Name</label>
+    <input id="fName" placeholder="e.g. Oat milk">
+
+    <div class="row2">
+      <div>
+        <label>Quantity</label>
+        <input id="fQty" type="number" inputmode="decimal" value="1" min="0" step="1">
+      </div>
+      <div>
+        <label>Unit</label>
+        <select id="fUnit">
+          <option>pcs</option><option>kg</option><option>g</option><option>L</option><option>ml</option><option>pack</option>
+        </select>
+      </div>
+    </div>
+
+    <label>Category</label>
+    <select id="fCategory"></select>
+    <div class="add-new-inline" id="fCategoryNewWrap" style="display:none;">
+      <input id="fCategoryNew" placeholder="New category name">
+      <button type="button" data-addnew="category">Add</button>
+    </div>
+
+    <label>Shop</label>
+    <select id="fShop"></select>
+    <div class="add-new-inline" id="fShopNewWrap" style="display:none;">
+      <input id="fShopNew" placeholder="New shop name">
+      <button type="button" data-addnew="shop">Add</button>
+    </div>
+
+    <label>Location</label>
+    <select id="fLocation"></select>
+    <div class="add-new-inline" id="fLocationNewWrap" style="display:none;">
+      <input id="fLocationNew" placeholder="New location name">
+      <button type="button" data-addnew="location">Add</button>
+    </div>
+
+    <div class="row2">
+      <div>
+        <label>Expiry date (optional)</label>
+        <input id="fExpiry" type="date">
+      </div>
+      <div>
+        <label>Bought date (optional)</label>
+        <input id="fBought" type="date">
+      </div>
+    </div>
+
+    <label>Low-stock alert when quantity drops below (optional)</label>
+    <input id="fThreshold" type="number" inputmode="decimal" min="0" step="1" placeholder="e.g. 2">
+
+    <label>Notes (optional)</label>
+    <textarea id="fNotes" placeholder="Brand, variant, anything useful…"></textarea>
+
+    <button class="primary-btn" id="saveItemBtn">Save item</button>
+    <button class="danger-btn" id="deleteItemBtn" style="display:none;">Delete item</button>
+  </div>
+</div>
+
+<!-- Export Sheet -->
+<div class="overlay" id="exportOverlay">
+  <div class="sheet">
+    <div class="sheet-head">
+      <h2>Export list</h2>
+      <button class="close-x" data-close="exportOverlay">✕</button>
+    </div>
+    <label style="margin-top:0;">Categories to include</label>
+    <div class="export-cats" id="exportCats"></div>
+
+    <label>Shop</label>
+    <div class="export-shops" id="exportShops"></div>
+
+    <label>
+      <input type="checkbox" id="exportLowOnly" style="width:auto;display:inline-block;vertical-align:middle;margin-right:6px;">
+      Only items expiring soon or low in stock
+    </label>
+
+    <div class="export-out" id="exportOut">Pick your filters above — the list builds automatically.</div>
+    <button class="copy-btn" id="copyBtn">Copy to clipboard</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+/* =========================================================
+   1) FIREBASE CONFIG — replace with YOUR project's config.
+   See SETUP.md for exactly where to find these values.
+   ========================================================= */
+const firebaseConfig = {
+  apiKey: "AIzaSyDYfENTOZfMuqbNGY1sCO13aeTP6oVjdtk",
+  authDomain: "myinventory-ad768.firebaseapp.com",
+  projectId: "myinventory-ad768",
+  storageBucket: "myinventory-ad768.firebasestorage.app",
+  messagingSenderId: "981724848743",
+  appId: "1:981724848743:web:d2a403cbca689da496eac2"
+};
+
+const CONFIG_IS_SET = !Object.values(firebaseConfig).some(v => String(v).includes("REPLACE_ME"));
+const banner = document.getElementById('statusBanner');
+if (!CONFIG_IS_SET){
+  banner.textContent = "Setup needed: this app isn't connected to a database yet. Follow SETUP.md, then edit the firebaseConfig block in index.html.";
+  banner.classList.add('show');
+}
+
+let db = null, auth = null, currentUser = null;
+if (CONFIG_IS_SET){
+  firebase.initializeApp(firebaseConfig);
+  db = firebase.firestore();
+  auth = firebase.auth();
+  auth.signInAnonymously().catch(err => {
+    banner.textContent = "Couldn't connect: " + err.message;
+    banner.classList.add('show');
+  });
+  auth.onAuthStateChanged(u => {
+    currentUser = u;
+    if (u) initData();
+  });
+}
+
+/* ---------- defaults ---------- */
+const DEFAULT_CATEGORIES = ["Food","Cleaning","Toiletries","Pets","Other"];
+const DEFAULT_SHOPS = ["Lidl","Mega","General","Market","eMag","Amazon","Biomarket","Other"];
+const DEFAULT_LOCATIONS = ["Fridge","Freezer","Pantry","Bathroom","Other"];
+const CATEGORY_COLORS = {Food:"#2F6B4F",Cleaning:"#4A6FA5",Toiletries:"#8B5FA3",Pets:"#B8752A",Other:"#6B6A60"};
+
+let categories = [...DEFAULT_CATEGORIES];
+let shops = [...DEFAULT_SHOPS];
+let locations = [...DEFAULT_LOCATIONS];
+let items = [];
+let activeFilters = { category: null, shop: null };
+let sortMode = "expiry"; // expiry | name | qty
+let searchTerm = "";
+
+/* ---------- data init & sync ---------- */
+function initData(){
+  db.collection('meta').doc('settings').onSnapshot(doc=>{
+    const d = doc.data() || {};
+    categories = mergeUnique(DEFAULT_CATEGORIES, d.customCategories);
+    shops = mergeUnique(DEFAULT_SHOPS, d.customShops);
+    locations = mergeUnique(DEFAULT_LOCATIONS, d.customLocations);
+    populateSelects();
+    renderFilterRow();
+    renderExportFilters();
+  }, err => showToast("Sync error: " + err.message));
+
+  db.collection('items').orderBy('name').onSnapshot(snap=>{
+    items = snap.docs.map(d=>({id:d.id, ...d.data()}));
+    renderList();
+  }, err => showToast("Sync error: " + err.message));
+}
+function mergeUnique(defaults, custom){
+  const c = Array.isArray(custom) ? custom : [];
+  return [...defaults, ...c.filter(x=>!defaults.includes(x))];
+}
+async function addCustomValue(kind, value){
+  value = value.trim();
+  if(!value) return;
+  const field = kind === 'category' ? 'customCategories' : kind === 'shop' ? 'customShops' : 'customLocations';
+  const ref = db.collection('meta').doc('settings');
+  await db.runTransaction(async t=>{
+    const doc = await t.get(ref);
+    const cur = (doc.exists && doc.data()[field]) || [];
+    if(!cur.includes(value)) t.set(ref, {[field]: [...cur, value]}, {merge:true});
+  });
+}
+
+/* ---------- freshness / low-stock logic ---------- */
+function daysUntil(dateStr){
+  if(!dateStr) return null;
+  const today = new Date(); today.setHours(0,0,0,0);
+  const target = new Date(dateStr + "T00:00:00");
+  return Math.round((target - today) / 86400000);
+}
+function freshnessStatus(item){
+  const d = daysUntil(item.expiryDate);
+  if(d === null) return null;
+  if(d < 0) return {level:'expired', label:'Expired'};
+  if(d <= 7) return {level:'soon', label: d===0 ? 'Expires today' : `${d}d left`};
+  return {level:'ok', label: `${d}d left`};
+}
+function lowStockStatus(item){
+  if(item.lowStockThreshold == null || item.lowStockThreshold === '') return null;
+  return item.quantity <= Number(item.lowStockThreshold);
+}
+
+/* ---------- rendering ---------- */
+function populateSelects(){
+  fillSelect('fCategory', categories);
+  fillSelect('fShop', shops);
+  fillSelect('fLocation', locations);
+}
+function fillSelect(id, arr){
+  const sel = document.getElementById(id);
+  const cur = sel.value;
+  sel.innerHTML = arr.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join('') + `<option value="__new__">+ Add new…</option>`;
+  if(arr.includes(cur)) sel.value = cur;
+}
+function renderFilterRow(){
+  const row = document.getElementById('filterRow');
+  const cats = categories.filter(c=>items.some(i=>i.category===c));
+  row.innerHTML = cats.map(c=>
+    `<span class="chip ${activeFilters.category===c?'on':''}" data-filter-cat="${esc(c)}">${esc(c)}</span>`
+  ).join('');
+}
+function renderExportFilters(){
+  const catWrap = document.getElementById('exportCats');
+  catWrap.innerHTML = categories.filter(c=>items.some(i=>i.category===c)).map(c=>
+    `<span class="chip ${exportState.cats.has(c)?'on':''}" data-excat="${esc(c)}">${esc(c)}</span>`
+  ).join('');
+  const shopWrap = document.getElementById('exportShops');
+  shopWrap.innerHTML = `<span class="chip ${exportState.shop===null?'on':''}" data-exshop="">All shops</span>` +
+    shops.filter(s=>items.some(i=>i.shop===s)).map(s=>
+      `<span class="chip ${exportState.shop===s?'on':''}" data-exshop="${esc(s)}">${esc(s)}</span>`
+    ).join('');
+}
+function renderList(){
+  const root = document.getElementById('listRoot');
+  let list = items.filter(i=>{
+    if(activeFilters.category && i.category !== activeFilters.category) return false;
+    if(searchTerm && !i.name.toLowerCase().includes(searchTerm.toLowerCase())) return false;
+    return true;
+  });
+  if(sortMode === 'name'){
+    list.sort((a,b)=>a.name.localeCompare(b.name));
+  } else if(sortMode === 'qty'){
+    list.sort((a,b)=>a.quantity-b.quantity);
+  } else {
+    list.sort((a,b)=>{
+      const da = daysUntil(a.expiryDate); const db_ = daysUntil(b.expiryDate);
+      if(da===null && db_===null) return a.name.localeCompare(b.name);
+      if(da===null) return 1;
+      if(db_===null) return -1;
+      return da-db_;
+    });
+  }
+
+  if(list.length===0){
+    root.innerHTML = `<div class="empty"><h3>Nothing here yet</h3><p>${items.length===0 ? "Tap “Add item” to start stocking the shelf." : "No items match your search or filter."}</p></div>`;
+    renderFilterRow();
+    return;
+  }
+
+  root.innerHTML = list.map(item=>{
+    const fresh = freshnessStatus(item);
+    const low = lowStockStatus(item);
+    const color = CATEGORY_COLORS[item.category] || '#6B6A60';
+    let badges = '';
+    if(fresh) badges += `<span class="badge ${fresh.level}">${fresh.label}</span>`;
+    if(low) badges += `<span class="badge low">Low stock</span>`;
+    const metaBits = [item.category, item.shop, item.location].filter(Boolean);
+    return `
+      <div class="item" data-id="${item.id}">
+        <span class="dot" style="background:${color}"></span>
+        <div class="item-main" data-open="${item.id}">
+          <div class="item-name">${esc(item.name)}</div>
+          <div class="item-meta">
+            <span class="mono">${item.quantity} ${esc(item.unit||'')}</span>
+            <span>${metaBits.map(esc).join(' · ')}</span>
+            ${badges}
+          </div>
+        </div>
+        <div class="qty-ctrl">
+          <button class="qty-btn" data-adj="${item.id}:-1">−</button>
+          <span class="qty-val mono">${item.quantity}</span>
+          <button class="qty-btn" data-adj="${item.id}:1">+</button>
+        </div>
+      </div>`;
+  }).join('');
+  renderFilterRow();
+}
+function esc(s){ return String(s??'').replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+/* ---------- item CRUD ---------- */
+document.getElementById('addFab').onclick = ()=> openItemSheet(null);
+document.getElementById('listRoot').addEventListener('click', e=>{
+  const openId = e.target.closest('[data-open]')?.dataset.open;
+  if(openId){ openItemSheet(items.find(i=>i.id===openId)); return; }
+  const adj = e.target.closest('[data-adj]')?.dataset.adj;
+  if(adj){
+    const [id, delta] = adj.split(':');
+    quickAdjust(id, Number(delta));
+  }
+});
+
+function openItemSheet(item){
+  document.getElementById('itemFormTitle').textContent = item ? 'Edit item' : 'Add item';
+  document.getElementById('editingId').value = item ? item.id : '';
+  document.getElementById('fName').value = item?.name || '';
+  document.getElementById('fQty').value = item?.quantity ?? 1;
+  document.getElementById('fUnit').value = item?.unit || 'pcs';
+  populateSelects();
+  document.getElementById('fCategory').value = item?.category || categories[0];
+  document.getElementById('fShop').value = item?.shop || shops[0];
+  document.getElementById('fLocation').value = item?.location || locations[0];
+  document.getElementById('fExpiry').value = item?.expiryDate || '';
+  document.getElementById('fBought').value = item?.boughtDate || '';
+  document.getElementById('fThreshold').value = item?.lowStockThreshold ?? '';
+  document.getElementById('fNotes').value = item?.notes || '';
+  document.getElementById('deleteItemBtn').style.display = item ? 'block' : 'none';
+  ['fCategoryNewWrap','fShopNewWrap','fLocationNewWrap'].forEach(id=>document.getElementById(id).style.display='none');
+  document.getElementById('itemOverlay').classList.add('show');
+}
+
+document.querySelectorAll('[data-close]').forEach(btn=>{
+  btn.onclick = ()=> document.getElementById(btn.dataset.close).classList.remove('show');
+});
+document.querySelectorAll('.overlay').forEach(ov=>{
+  ov.addEventListener('click', e=>{ if(e.target===ov) ov.classList.remove('show'); });
+});
+
+['fCategory','fShop','fLocation'].forEach(id=>{
+  document.getElementById(id).addEventListener('change', e=>{
+    const wrapId = id + 'NewWrap';
+    document.getElementById(wrapId).style.display = e.target.value === '__new__' ? 'flex' : 'none';
+  });
+});
+document.querySelectorAll('[data-addnew]').forEach(btn=>{
+  btn.onclick = async ()=>{
+    const kind = btn.dataset.addnew;
+    const inputId = 'f' + kind[0].toUpperCase() + kind.slice(1) + 'New';
+    const val = document.getElementById(inputId).value.trim();
+    if(!val) return;
+    await addCustomValue(kind, val);
+    document.getElementById(inputId).value = '';
+    document.getElementById('f'+kind[0].toUpperCase()+kind.slice(1)+'NewWrap').style.display='none';
+    setTimeout(()=>{
+      const sel = document.getElementById('f'+kind[0].toUpperCase()+kind.slice(1));
+      sel.value = val;
+    }, 300);
+  };
+});
+
+document.getElementById('saveItemBtn').onclick = async ()=>{
+  const name = document.getElementById('fName').value.trim();
+  if(!name){ showToast("Give it a name first"); return; }
+  const id = document.getElementById('editingId').value;
+  const data = {
+    name,
+    quantity: Number(document.getElementById('fQty').value) || 0,
+    unit: document.getElementById('fUnit').value,
+    category: valOrDefault('fCategory'),
+    shop: valOrDefault('fShop'),
+    location: valOrDefault('fLocation'),
+    expiryDate: document.getElementById('fExpiry').value || null,
+    boughtDate: document.getElementById('fBought').value || null,
+    lowStockThreshold: document.getElementById('fThreshold').value === '' ? null : Number(document.getElementById('fThreshold').value),
+    notes: document.getElementById('fNotes').value.trim(),
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+  };
+  try{
+    if(id){ await db.collection('items').doc(id).update(data); }
+    else{ await db.collection('items').add(data); }
+    document.getElementById('itemOverlay').classList.remove('show');
+    showToast(id ? "Item updated" : "Item added");
+  }catch(err){ showToast("Couldn't save: " + err.message); }
+};
+function valOrDefault(id){
+  const el = document.getElementById(id);
+  return el.value === '__new__' ? el.options[0].value : el.value;
+}
+document.getElementById('deleteItemBtn').onclick = async ()=>{
+  const id = document.getElementById('editingId').value;
+  if(!id) return;
+  if(!confirm("Delete this item?")) return;
+  await db.collection('items').doc(id).delete();
+  document.getElementById('itemOverlay').classList.remove('show');
+  showToast("Item deleted");
+};
+async function quickAdjust(id, delta){
+  const item = items.find(i=>i.id===id);
+  if(!item) return;
+  const next = Math.max(0, (item.quantity||0) + delta);
+  await db.collection('items').doc(id).update({quantity: next, updatedAt: firebase.firestore.FieldValue.serverTimestamp()});
+}
+
+/* ---------- search / sort / filter ---------- */
+document.getElementById('searchInput').addEventListener('input', e=>{
+  searchTerm = e.target.value; renderList();
+});
+document.getElementById('sortBtn').addEventListener('click', ()=>{
+  sortMode = sortMode === 'expiry' ? 'name' : sortMode === 'name' ? 'qty' : 'expiry';
+  showToast("Sorted by " + (sortMode==='expiry'?'expiry date':sortMode==='name'?'name':'quantity'));
+  renderList();
+});
+document.getElementById('filterRow').addEventListener('click', e=>{
+  const cat = e.target.closest('[data-filter-cat]')?.dataset.filterCat;
+  if(cat===undefined) return;
+  activeFilters.category = activeFilters.category === cat ? null : cat;
+  renderList();
+});
+
+/* ---------- export ---------- */
+let exportState = { cats: new Set(['Food']), shop: null, lowOnly:false };
+document.getElementById('exportFab').onclick = ()=>{
+  renderExportFilters();
+  buildExportText();
+  document.getElementById('exportOverlay').classList.add('show');
+};
+document.getElementById('exportCats').addEventListener('click', e=>{
+  const c = e.target.closest('[data-excat]')?.dataset.excat;
+  if(c===undefined) return;
+  if(exportState.cats.has(c)) exportState.cats.delete(c); else exportState.cats.add(c);
+  renderExportFilters(); buildExportText();
+});
+document.getElementById('exportShops').addEventListener('click', e=>{
+  const s = e.target.closest('[data-exshop]')?.dataset.exshop;
+  if(s===undefined) return;
+  exportState.shop = s === '' ? null : s;
+  renderExportFilters(); buildExportText();
+});
+document.getElementById('exportLowOnly').addEventListener('change', e=>{
+  exportState.lowOnly = e.target.checked; buildExportText();
+});
+function buildExportText(){
+  let list = items.filter(i=>{
+    if(exportState.cats.size>0 && !exportState.cats.has(i.category)) return false;
+    if(exportState.shop && i.shop !== exportState.shop) return false;
+    if(exportState.lowOnly){
+      const fresh = freshnessStatus(i);
+      const low = lowStockStatus(i);
+      const soonOrExpired = fresh && (fresh.level==='soon'||fresh.level==='expired');
+      if(!soonOrExpired && !low) return false;
+    }
+    return true;
+  });
+  list.sort((a,b)=>a.name.localeCompare(b.name));
+  const out = document.getElementById('exportOut');
+  if(list.length===0){ out.textContent = "No items match these filters."; return; }
+  const lines = list.map(i=>{
+    let line = `- ${i.name}: ${i.quantity} ${i.unit||''}`.trim();
+    if(i.expiryDate) line += ` (expires ${i.expiryDate})`;
+    if(i.notes) line += ` — ${i.notes}`;
+    return line;
+  });
+  out.textContent = lines.join('\n');
+}
+document.getElementById('copyBtn').onclick = async ()=>{
+  const text = document.getElementById('exportOut').textContent;
+  try{
+    await navigator.clipboard.writeText(text);
+    showToast("Copied to clipboard");
+  }catch{
+    showToast("Couldn't copy — select and copy manually");
+  }
+};
+
+/* ---------- toast ---------- */
+let toastTimer;
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+/* ---------- PWA install / offline shell ---------- */
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=> navigator.serviceWorker.register('sw.js').catch(()=>{}));
+}
+
+/* init selects even before auth resolves, using defaults */
+populateSelects();
+renderExportFilters();
+</script>
+</body>
+</html>
