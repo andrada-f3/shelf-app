@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.3
+- "Duplicate as new item" button when editing an item — for products bought with multiple expiry dates at once (e.g. several yogurts), add it once, then duplicate and adjust quantity/expiry per batch.
+- New "Paused" state per item: hides its low-stock alert and moves it to a quiet "Paused" section at the bottom of the list, without deleting it. One-tap "↻ Revive" brings it back into normal tracking and opens it for editing so you can set the new quantity right away.
+- **Requires a Firestore rules update** — see setup notes.
+
 ## v1.2
 - Android back button now closes the open sheet (add/edit item, export, manage lists) instead of exiting the app.
 - Sort "by quantity" replaced with sort "by closest to running out": items with a low-stock threshold set are ranked by how close current quantity is to that threshold; items without one sort after, falling back to raw quantity.

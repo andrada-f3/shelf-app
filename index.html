@@ -115,6 +115,13 @@
   .badge.soon{background:var(--amber-bg);color:var(--amber);}
   .badge.expired{background:var(--red-bg);color:var(--red);}
   .badge.low{background:var(--amber-bg);color:var(--amber);}
+  .badge.paused{background:var(--line);color:var(--ink-soft);}
+
+  .item.muted{opacity:.6;}
+  .revive-btn{
+    flex:0 0 auto;background:var(--green-bg);color:var(--green);border:1px solid var(--green);border-radius:20px;
+    padding:8px 13px;font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;
+  }
 
   .qty-ctrl{display:flex;align-items:center;gap:0;flex:0 0 auto;}
   .qty-btn{
@@ -172,6 +179,12 @@
     width:100%;background:none;color:var(--red);border:1px solid var(--red-bg);border-radius:12px;padding:12px;
     font-weight:600;font-size:13px;margin-top:10px;cursor:pointer;
   }
+  .secondary-btn{
+    width:100%;background:none;color:var(--ink);border:1px solid var(--line);border-radius:12px;padding:12px;
+    font-weight:600;font-size:13px;margin-top:10px;cursor:pointer;
+  }
+  .checkbox-row{display:flex;align-items:center;gap:9px;margin-top:16px;font-size:13px;color:var(--ink);}
+  .checkbox-row input{width:auto;}
   .helper{font-size:11px;color:var(--ink-soft);margin-top:4px;}
 
   .export-cats,.export-shops{display:flex;flex-wrap:wrap;gap:7px;margin-top:8px;}
@@ -214,7 +227,7 @@
 <header>
   <span class="label-tag">Shared &amp; live</span>
   <h1>Shelf</h1>
-  <p>What's in the house, and when it runs out. <span class="mono" style="opacity:.55;">v1.2</span></p>
+  <p>What's in the house, and when it runs out. <span class="mono" style="opacity:.55;">v1.3</span></p>
   <div class="toolbar">
     <input class="search" id="searchInput" placeholder="Search items…" autocomplete="off">
     <button class="icon-btn" id="sortBtn" title="Sort">⇅</button>
@@ -296,10 +309,16 @@
     <label>Low-stock alert when quantity drops below (optional)</label>
     <input id="fThreshold" type="number" inputmode="decimal" min="0" step="1" placeholder="e.g. 2">
 
+    <div class="checkbox-row">
+      <input type="checkbox" id="fPaused">
+      <span>Paused — not restocking right now (hides the low-stock alert for this item)</span>
+    </div>
+
     <label>Notes (optional)</label>
     <textarea id="fNotes" placeholder="Brand, variant, anything useful…"></textarea>
 
     <button class="primary-btn" id="saveItemBtn">Save item</button>
+    <button class="secondary-btn" id="duplicateItemBtn" style="display:none;">Duplicate as new item</button>
     <button class="danger-btn" id="deleteItemBtn" style="display:none;">Delete item</button>
   </div>
 </div>
@@ -536,6 +555,7 @@ function freshnessStatus(item){
   return {level:'ok', label: `${formatDuration(d)} left`};
 }
 function lowStockStatus(item){
+  if(item.paused) return null;
   if(item.lowStockThreshold == null || item.lowStockThreshold === '') return null;
   return item.quantity < Number(item.lowStockThreshold);
 }
@@ -605,11 +625,14 @@ document.querySelectorAll('[data-manageadd]').forEach(btn=>{
 
 function renderList(){
   const root = document.getElementById('listRoot');
-  let list = items.filter(i=>{
+  let filtered = items.filter(i=>{
     if(activeFilters.category && i.category !== activeFilters.category) return false;
     if(searchTerm && !i.name.toLowerCase().includes(searchTerm.toLowerCase())) return false;
     return true;
   });
+  let list = filtered.filter(i=>!i.paused);
+  const pausedList = filtered.filter(i=>i.paused).sort((a,b)=>a.name.localeCompare(b.name));
+
   if(sortMode === 'name'){
     list.sort((a,b)=>a.name.localeCompare(b.name));
   } else if(sortMode === 'runway'){
@@ -635,39 +658,48 @@ function renderList(){
     });
   }
 
-  if(list.length===0){
+  if(list.length===0 && pausedList.length===0){
     root.innerHTML = `<div class="empty"><h3>Nothing here yet</h3><p>${items.length===0 ? "Tap “Add item” to start stocking the shelf." : "No items match your search or filter."}</p></div>`;
     renderFilterRow();
     return;
   }
 
-  root.innerHTML = list.map(item=>{
-    const fresh = freshnessStatus(item);
-    const low = lowStockStatus(item);
-    const color = CATEGORY_COLORS[item.category] || '#6B6A60';
-    let badges = '';
-    if(fresh) badges += `<span class="badge ${fresh.level}">${fresh.label}</span>`;
-    if(low) badges += `<span class="badge low">Low stock</span>`;
-    const metaBits = [item.category, item.shop, item.location].filter(Boolean);
-    return `
-      <div class="item" data-id="${esc(item.id)}">
-        <span class="dot" style="background:${color}"></span>
-        <div class="item-main" data-open="${esc(item.id)}">
-          <div class="item-name">${esc(item.name)}</div>
-          <div class="item-meta">
-            <span class="mono">${esc(item.quantity)} ${esc(item.unit||'')}</span>
-            <span>${metaBits.map(esc).join(' · ')}</span>
-            ${badges}
-          </div>
-        </div>
-        <div class="qty-ctrl">
-          <button class="qty-btn" data-adj="${esc(item.id)}:-1">−</button>
-          <span class="qty-val mono">${esc(item.quantity)}</span>
-          <button class="qty-btn" data-adj="${esc(item.id)}:1">+</button>
-        </div>
-      </div>`;
-  }).join('');
+  let html = list.map(renderItemCard).join('');
+  if(pausedList.length>0){
+    html += `<div class="section-label">Paused — not restocking</div>` + pausedList.map(renderItemCard).join('');
+  }
+  root.innerHTML = html;
   renderFilterRow();
+}
+function renderItemCard(item){
+  const fresh = freshnessStatus(item);
+  const low = lowStockStatus(item);
+  const color = CATEGORY_COLORS[item.category] || '#6B6A60';
+  let badges = '';
+  if(item.paused) badges += `<span class="badge paused">Paused</span>`;
+  if(fresh) badges += `<span class="badge ${fresh.level}">${fresh.label}</span>`;
+  if(low) badges += `<span class="badge low">Low stock</span>`;
+  const metaBits = [item.category, item.shop, item.location].filter(Boolean);
+  const rightControl = item.paused
+    ? `<button class="revive-btn" data-revive="${esc(item.id)}">↻ Revive</button>`
+    : `<div class="qty-ctrl">
+        <button class="qty-btn" data-adj="${esc(item.id)}:-1">−</button>
+        <span class="qty-val mono">${esc(item.quantity)}</span>
+        <button class="qty-btn" data-adj="${esc(item.id)}:1">+</button>
+      </div>`;
+  return `
+    <div class="item ${item.paused?'muted':''}" data-id="${esc(item.id)}">
+      <span class="dot" style="background:${color}"></span>
+      <div class="item-main" data-open="${esc(item.id)}">
+        <div class="item-name">${esc(item.name)}</div>
+        <div class="item-meta">
+          <span class="mono">${esc(item.quantity)} ${esc(item.unit||'')}</span>
+          <span>${metaBits.map(esc).join(' · ')}</span>
+          ${badges}
+        </div>
+      </div>
+      ${rightControl}
+    </div>`;
 }
 function esc(s){ return String(s??'').replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
 
@@ -680,8 +712,21 @@ document.getElementById('listRoot').addEventListener('click', e=>{
   if(adj){
     const [id, delta] = adj.split(':');
     quickAdjust(id, Number(delta));
+    return;
   }
+  const revive = e.target.closest('[data-revive]')?.dataset.revive;
+  if(revive){ reviveItem(revive); }
 });
+async function reviveItem(id){
+  try{
+    await db.collection('items').doc(id).update({
+      paused:false, updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    const item = items.find(i=>i.id===id);
+    openItemSheet(item ? {...item, paused:false} : null);
+    showToast("Revived — update the quantity and save");
+  }catch(err){ showToast("Couldn't revive: " + err.message); }
+}
 
 function openItemSheet(item){
   document.getElementById('itemFormTitle').textContent = item ? 'Edit item' : 'Add item';
@@ -696,12 +741,22 @@ function openItemSheet(item){
   document.getElementById('fExpiry').value = item?.expiryDate || '';
   document.getElementById('fBought').value = item?.boughtDate || '';
   document.getElementById('fThreshold').value = item?.lowStockThreshold ?? '';
+  document.getElementById('fPaused').checked = !!item?.paused;
   document.getElementById('fNotes').value = item?.notes || '';
   document.getElementById('deleteItemBtn').style.display = item ? 'block' : 'none';
+  document.getElementById('duplicateItemBtn').style.display = item ? 'block' : 'none';
   ['fCategoryNewWrap','fShopNewWrap','fLocationNewWrap'].forEach(id=>document.getElementById(id).style.display='none');
   document.getElementById('itemOverlay').classList.add('show');
   history.pushState({overlay:'itemOverlay'}, '');
 }
+document.getElementById('duplicateItemBtn').onclick = ()=>{
+  document.getElementById('editingId').value = '';
+  document.getElementById('itemFormTitle').textContent = 'Add item (copy)';
+  document.getElementById('deleteItemBtn').style.display = 'none';
+  document.getElementById('duplicateItemBtn').style.display = 'none';
+  document.getElementById('fName').focus();
+  showToast("Now creating a copy — adjust quantity/expiry, then save");
+};
 
 document.querySelectorAll('[data-close]').forEach(btn=>{
   btn.onclick = ()=> closeOverlay(btn.dataset.close);
@@ -746,6 +801,7 @@ document.getElementById('saveItemBtn').onclick = async ()=>{
     expiryDate: document.getElementById('fExpiry').value || null,
     boughtDate: document.getElementById('fBought').value || null,
     lowStockThreshold: document.getElementById('fThreshold').value === '' ? null : Number(document.getElementById('fThreshold').value),
+    paused: document.getElementById('fPaused').checked,
     notes: document.getElementById('fNotes').value.trim(),
     updatedAt: firebase.firestore.FieldValue.serverTimestamp()
   };
