@@ -4,14 +4,37 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Shelf — household inventory</title>
-<meta name="theme-color" content="#F0F2EA">
+<meta name="theme-color" content="#1D1E19" id="themeColorMeta">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<script>
+  /* Applied before first paint so there's no flash of the wrong theme. */
+  (function(){
+    try{
+      var t = localStorage.getItem('shelf-theme');
+      if(t === 'light') document.documentElement.setAttribute('data-theme','light');
+    }catch(e){}
+  })();
+</script>
 <style>
   :root{
+    /* dark theme — default */
+    --paper:#1D1E19;
+    --card:#262822;
+    --ink:#EDEBE0;
+    --ink-soft:#9C9A8C;
+    --line:#3A3C33;
+    --green:#5AAE81;
+    --green-bg:#233329;
+    --amber:#E0A155;
+    --amber-bg:#3A2C18;
+    --red:#E28A7D;
+    --red-bg:#3A211D;
+  }
+  :root[data-theme="light"]{
     --paper:#F0F2EA;
     --card:#FBFAF5;
     --ink:#2B2A26;
@@ -189,10 +212,11 @@
 <header>
   <span class="label-tag">Shared &amp; live</span>
   <h1>Shelf</h1>
-  <p>What's in the house, and when it runs out.</p>
+  <p>What's in the house, and when it runs out. <span class="mono" style="opacity:.55;">v1.1</span></p>
   <div class="toolbar">
     <input class="search" id="searchInput" placeholder="Search items…" autocomplete="off">
     <button class="icon-btn" id="sortBtn" title="Sort">⇅</button>
+    <button class="icon-btn" id="themeBtn" title="Switch theme">☀</button>
     <button class="icon-btn" id="manageBtn" title="Manage categories, shops, locations">⚙</button>
   </div>
   <div class="filter-row" id="filterRow"></div>
@@ -518,13 +542,16 @@ function lowStockStatus(item){
 function populateSelects(){
   fillSelect('fCategory', categories);
   fillSelect('fShop', shops);
-  fillSelect('fLocation', locations);
+  fillSelect('fLocation', locations, true);
 }
-function fillSelect(id, arr){
+function fillSelect(id, arr, allowBlank){
   const sel = document.getElementById(id);
   const cur = sel.value;
-  sel.innerHTML = arr.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join('') + `<option value="__new__">+ Add new…</option>`;
-  if(arr.includes(cur)) sel.value = cur;
+  let html = allowBlank ? `<option value="">— none —</option>` : '';
+  html += arr.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join('') + `<option value="__new__">+ Add new…</option>`;
+  sel.innerHTML = html;
+  if(cur === '' && allowBlank) sel.value = '';
+  else if(arr.includes(cur)) sel.value = cur;
 }
 function renderFilterRow(){
   const row = document.getElementById('filterRow');
@@ -650,8 +677,8 @@ function openItemSheet(item){
   document.getElementById('fUnit').value = item?.unit || 'pcs';
   populateSelects();
   document.getElementById('fCategory').value = item?.category || categories[0];
-  document.getElementById('fShop').value = item?.shop || shops[0];
-  document.getElementById('fLocation').value = item?.location || locations[0];
+  document.getElementById('fShop').value = item?.shop || (shops.includes('Other') ? 'Other' : shops[0]);
+  document.getElementById('fLocation').value = item?.location || '';
   document.getElementById('fExpiry').value = item?.expiryDate || '';
   document.getElementById('fBought').value = item?.boughtDate || '';
   document.getElementById('fThreshold').value = item?.lowStockThreshold ?? '';
@@ -700,7 +727,7 @@ document.getElementById('saveItemBtn').onclick = async ()=>{
     unit: document.getElementById('fUnit').value,
     category: valOrDefault('fCategory'),
     shop: valOrDefault('fShop'),
-    location: valOrDefault('fLocation'),
+    location: valOrDefault('fLocation') || null,
     expiryDate: document.getElementById('fExpiry').value || null,
     boughtDate: document.getElementById('fBought').value || null,
     lowStockThreshold: document.getElementById('fThreshold').value === '' ? null : Number(document.getElementById('fThreshold').value),
@@ -821,6 +848,33 @@ function showToast(msg){
   clearTimeout(toastTimer);
   toastTimer = setTimeout(()=>t.classList.remove('show'), 2200);
 }
+
+/* ---------- theme toggle ---------- */
+const themeBtn = document.getElementById('themeBtn');
+const themeColorMeta = document.getElementById('themeColorMeta');
+function applyThemeButton(){
+  const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+  themeBtn.textContent = isLight ? '☾' : '☀';
+  themeBtn.title = isLight ? 'Switch to dark theme' : 'Switch to light theme';
+  themeColorMeta.setAttribute('content', isLight ? '#F0F2EA' : '#1D1E19');
+}
+themeBtn.onclick = ()=>{
+  const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+  if(isLight){
+    document.documentElement.removeAttribute('data-theme');
+    try{ localStorage.setItem('shelf-theme','dark'); }catch(e){}
+  } else {
+    document.documentElement.setAttribute('data-theme','light');
+    try{ localStorage.setItem('shelf-theme','light'); }catch(e){}
+  }
+  applyThemeButton();
+};
+applyThemeButton();
+
+/* ---------- number fields: select existing value so typing replaces it ---------- */
+['fQty','fThreshold'].forEach(id=>{
+  document.getElementById(id).addEventListener('focus', e=> e.target.select());
+});
 
 /* ---------- PWA install / offline shell ---------- */
 if('serviceWorker' in navigator){
