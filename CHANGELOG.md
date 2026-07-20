@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.2
+- Android back button now closes the open sheet (add/edit item, export, manage lists) instead of exiting the app.
+- Sort "by quantity" replaced with sort "by closest to running out": items with a low-stock threshold set are ranked by how close current quantity is to that threshold; items without one sort after, falling back to raw quantity.
+
 ## v1.1
 - Dark theme by default, with a toggle (☀/☾ icon in the header) to switch to light. Preference is remembered per device.
 - Quantity and low-stock number fields now select their current value on focus, so typing a new number replaces it instead of appending.

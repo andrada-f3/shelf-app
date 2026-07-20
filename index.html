@@ -214,7 +214,7 @@
 <header>
   <span class="label-tag">Shared &amp; live</span>
   <h1>Shelf</h1>
-  <p>What's in the house, and when it runs out. <span class="mono" style="opacity:.55;">v1.1</span></p>
+  <p>What's in the house, and when it runs out. <span class="mono" style="opacity:.55;">v1.2</span></p>
   <div class="toolbar">
     <input class="search" id="searchInput" placeholder="Search items…" autocomplete="off">
     <button class="icon-btn" id="sortBtn" title="Sort">⇅</button>
@@ -437,7 +437,7 @@ let shops = [...DEFAULT_SHOPS];
 let locations = [...DEFAULT_LOCATIONS];
 let items = [];
 let activeFilters = { category: null, shop: null };
-let sortMode = "expiry"; // expiry | name | qty
+let sortMode = "expiry"; // expiry | name | runway
 let searchTerm = "";
 
 /* ---------- data init & sync ---------- */
@@ -587,6 +587,7 @@ function renderManageGroup(rootId, list, field){
 document.getElementById('manageBtn').onclick = ()=>{
   renderManageSheet();
   document.getElementById('manageOverlay').classList.add('show');
+  history.pushState({overlay:'manageOverlay'}, '');
 };
 document.getElementById('manageOverlay').addEventListener('click', e=>{
   const btn = e.target.closest('[data-delvalue]');
@@ -611,8 +612,19 @@ function renderList(){
   });
   if(sortMode === 'name'){
     list.sort((a,b)=>a.name.localeCompare(b.name));
-  } else if(sortMode === 'qty'){
-    list.sort((a,b)=>a.quantity-b.quantity);
+  } else if(sortMode === 'runway'){
+    list.sort((a,b)=>{
+      const hasA = a.lowStockThreshold != null && a.lowStockThreshold !== '';
+      const hasB = b.lowStockThreshold != null && b.lowStockThreshold !== '';
+      if(hasA && hasB){
+        return (a.quantity - Number(a.lowStockThreshold)) - (b.quantity - Number(b.lowStockThreshold));
+      }
+      if(hasA && !hasB) return -1;
+      if(!hasA && hasB) return 1;
+      // neither has a threshold set — no runway to compute, fall back to raw quantity then name
+      if(a.quantity !== b.quantity) return a.quantity - b.quantity;
+      return a.name.localeCompare(b.name);
+    });
   } else {
     list.sort((a,b)=>{
       const da = daysUntil(a.expiryDate); const db_ = daysUntil(b.expiryDate);
@@ -688,13 +700,14 @@ function openItemSheet(item){
   document.getElementById('deleteItemBtn').style.display = item ? 'block' : 'none';
   ['fCategoryNewWrap','fShopNewWrap','fLocationNewWrap'].forEach(id=>document.getElementById(id).style.display='none');
   document.getElementById('itemOverlay').classList.add('show');
+  history.pushState({overlay:'itemOverlay'}, '');
 }
 
 document.querySelectorAll('[data-close]').forEach(btn=>{
-  btn.onclick = ()=> document.getElementById(btn.dataset.close).classList.remove('show');
+  btn.onclick = ()=> closeOverlay(btn.dataset.close);
 });
 document.querySelectorAll('.overlay').forEach(ov=>{
-  ov.addEventListener('click', e=>{ if(e.target===ov) ov.classList.remove('show'); });
+  ov.addEventListener('click', e=>{ if(e.target===ov) closeOverlay(ov.id); });
 });
 
 ['fCategory','fShop','fLocation'].forEach(id=>{
@@ -739,7 +752,7 @@ document.getElementById('saveItemBtn').onclick = async ()=>{
   try{
     if(id){ await db.collection('items').doc(id).update(data); }
     else{ await db.collection('items').add(data); }
-    document.getElementById('itemOverlay').classList.remove('show');
+    closeOverlay('itemOverlay');
     showToast(id ? "Item updated" : "Item added");
   }catch(err){ showToast("Couldn't save: " + err.message); }
 };
@@ -752,7 +765,7 @@ document.getElementById('deleteItemBtn').onclick = async ()=>{
   if(!id) return;
   if(!confirm("Delete this item?")) return;
   await db.collection('items').doc(id).delete();
-  document.getElementById('itemOverlay').classList.remove('show');
+  closeOverlay('itemOverlay');
   showToast("Item deleted");
 };
 async function quickAdjust(id, delta){
@@ -767,8 +780,8 @@ document.getElementById('searchInput').addEventListener('input', e=>{
   searchTerm = e.target.value; renderList();
 });
 document.getElementById('sortBtn').addEventListener('click', ()=>{
-  sortMode = sortMode === 'expiry' ? 'name' : sortMode === 'name' ? 'qty' : 'expiry';
-  showToast("Sorted by " + (sortMode==='expiry'?'expiry date':sortMode==='name'?'name':'quantity'));
+  sortMode = sortMode === 'expiry' ? 'name' : sortMode === 'name' ? 'runway' : 'expiry';
+  showToast("Sorted by " + (sortMode==='expiry'?'expiry date':sortMode==='name'?'name':'closest to running out'));
   renderList();
 });
 document.getElementById('filterRow').addEventListener('click', e=>{
@@ -784,6 +797,7 @@ document.getElementById('exportFab').onclick = ()=>{
   renderExportFilters();
   buildExportText();
   document.getElementById('exportOverlay').classList.add('show');
+  history.pushState({overlay:'exportOverlay'}, '');
 };
 document.getElementById('exportCats').addEventListener('click', e=>{
   const c = e.target.closest('[data-excat]')?.dataset.excat;
@@ -842,6 +856,22 @@ document.getElementById('copyBtn').onclick = async ()=>{
 };
 
 /* ---------- toast ---------- */
+/* ---------- overlay open/close, back-button aware ---------- */
+function openOverlay(id){
+  document.getElementById(id).classList.add('show');
+  history.pushState({overlay:id}, '');
+}
+function closeOverlay(id){
+  if(history.state && history.state.overlay === id){
+    history.back();
+  } else {
+    document.getElementById(id).classList.remove('show');
+  }
+}
+window.addEventListener('popstate', ()=>{
+  document.querySelectorAll('.overlay.show').forEach(ov=>ov.classList.remove('show'));
+});
+
 let toastTimer;
 function showToast(msg){
   const t = document.getElementById('toast');
