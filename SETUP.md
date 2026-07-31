@@ -13,7 +13,8 @@ Do A first, since you need one value from it before B.
 1. Go to https://console.firebase.google.com and sign in with any Google account.
 2. Click **"Create a project"**. Name it anything (e.g. "shelf-app"). You can disable Google Analytics when asked — you don't need it.
 3. Once the project opens, in the left sidebar click **Build → Firestore Database**. Click **Create database**. Choose a location close to you, and start in **Production mode** (we'll set rules manually below).
-4. Still in the left sidebar, click **Build → Authentication**. Click **Get started**. Under "Sign-in method", enable **Anonymous**. This lets your and your fiancée's phones use the shared list without needing passwords.
+4. Still in the left sidebar, click **Build → Authentication**. Click **Get started**. Under "Sign-in method", enable **Email/Password** (leave "Email link" off).
+5. Click the **Users** tab (next to "Sign-in method") → **Add user**. Create one login for yourself (any email-shaped text works, e.g. `you@household.local` — it doesn't need to be a real inbox, it's just an ID) and a password. Click **Add user** again and create a second one for your fiancée the same way. These two logins are the *only* way into the app — there's no public sign-up screen anywhere.
 5. In Firestore, go to the **Rules** tab and replace the contents with this, then click **Publish**:
 
    ```
@@ -70,7 +71,8 @@ That URL is your app. Open it on both phones.
 ## If something doesn't sync or load
 
 - Double check every `REPLACE_ME` value in `index.html` was replaced exactly (no extra quotes or spaces).
-- Make sure Anonymous auth is switched **on** in Firebase Authentication.
+- Make sure Email/Password is enabled in Firebase Authentication → Sign-in method, and that the two user accounts exist under the Users tab.
+- If sign-in fails, double check you typed the exact email and password you created in the Users tab — there's no "forgot password" flow for these, since they're not real inboxes; reset them from the Firebase console instead if needed.
 - Make sure the Firestore rules were **published** (there's a Publish button — just pasting isn't enough).
 - The very first load needs internet. After that, the app shell (the interface) loads offline, but adding/syncing items still needs a connection.
 

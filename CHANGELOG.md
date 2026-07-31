@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.4
+- Replaced open anonymous sign-in with a real login screen (email + password). No public sign-up anywhere in the app — the only way in is an account you create yourself in the Firebase console, so no credentials or emails ever appear in the code or GitHub repo.
+- Added a "Sign out" button (bottom of Manage Lists).
+- **Requires Firebase console changes** — see setup notes: disable Anonymous sign-in, enable Email/Password, manually add the two accounts.
+
 ## v1.3
 - "Duplicate as new item" button when editing an item — for products bought with multiple expiry dates at once (e.g. several yogurts), add it once, then duplicate and adjust quantity/expiry per batch.
 - New "Paused" state per item: hides its low-stock alert and moves it to a quiet "Paused" section at the bottom of the list, without deleting it. One-tap "↻ Revive" brings it back into normal tracking and opens it for editing so you can set the new quantity right away.

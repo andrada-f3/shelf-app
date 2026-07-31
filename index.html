@@ -185,6 +185,13 @@
   }
   .checkbox-row{display:flex;align-items:center;gap:9px;margin-top:16px;font-size:13px;color:var(--ink);}
   .checkbox-row input{width:auto;}
+
+  .gate{
+    min-height:100vh;min-height:100dvh;display:flex;align-items:center;justify-content:center;
+    padding:24px;background:var(--paper);
+  }
+  .gate-card{width:100%;max-width:360px;}
+  .gate-error{color:var(--red);font-size:12.5px;margin:10px 0 0;min-height:16px;}
   .helper{font-size:11px;color:var(--ink-soft);margin-top:4px;}
 
   .export-cats,.export-shops{display:flex;flex-wrap:wrap;gap:7px;margin-top:8px;}
@@ -224,10 +231,26 @@
 </head>
 <body>
 
+<div class="gate" id="signInGate">
+  <div class="gate-card">
+    <span class="label-tag">Private &amp; shared</span>
+    <h1 style="margin-top:10px;">Sign in to Shelf</h1>
+    <p style="color:var(--ink-soft);font-size:13px;margin:4px 0 0;">Only accounts created for this household can get in.</p>
+    <label style="margin-top:20px;">Email</label>
+    <input id="gateEmail" type="email" autocomplete="username" placeholder="you@example.com">
+    <label>Password</label>
+    <input id="gatePassword" type="password" autocomplete="current-password" placeholder="••••••••">
+    <p id="gateError" class="gate-error"></p>
+    <button class="primary-btn" id="signInBtn" style="margin-top:16px;">Sign in</button>
+  </div>
+</div>
+
+<div id="appRoot" style="display:none;">
+
 <header>
   <span class="label-tag">Shared &amp; live</span>
   <h1>Shelf</h1>
-  <p>What's in the house, and when it runs out. <span class="mono" style="opacity:.55;">v1.3</span></p>
+  <p>What's in the house, and when it runs out. <span class="mono" style="opacity:.55;">v1.4</span></p>
   <div class="toolbar">
     <input class="search" id="searchInput" placeholder="Search items…" autocomplete="off">
     <button class="icon-btn" id="sortBtn" title="Sort">⇅</button>
@@ -385,10 +408,14 @@
         <button type="button" data-manageadd="locations">Add</button>
       </div>
     </div>
+
+    <button class="danger-btn" id="signOutBtn" style="margin-top:24px;">Sign out</button>
   </div>
 </div>
 
 <div class="toast" id="toast"></div>
+
+</div><!-- /appRoot -->
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
@@ -412,6 +439,8 @@ const banner = document.getElementById('statusBanner');
 if (!CONFIG_IS_SET){
   banner.textContent = "Setup needed: this app isn't connected to a database yet. Follow SETUP.md, then edit the firebaseConfig block in index.html.";
   banner.classList.add('show');
+  document.getElementById('gateError').textContent = "App isn't connected to a database yet — see SETUP.md.";
+  document.getElementById('signInBtn').disabled = true;
 }
 
 function updateOnlineBanner(){
@@ -435,15 +464,51 @@ if (CONFIG_IS_SET){
     /* Persistence unavailable (private browsing, or open in >1 tab without sync) — app still works online. */
   });
   auth = firebase.auth();
-  auth.signInAnonymously().catch(err => {
-    banner.textContent = "Couldn't connect: " + err.message;
-    banner.classList.add('show');
-  });
   auth.onAuthStateChanged(u => {
     currentUser = u;
-    if (u) initData();
+    const gate = document.getElementById('signInGate');
+    const root = document.getElementById('appRoot');
+    if (u){
+      gate.style.display = 'none';
+      root.style.display = '';
+      initData();
+    } else {
+      gate.style.display = 'flex';
+      root.style.display = 'none';
+    }
   });
 }
+
+function friendlyAuthError(code){
+  const map = {
+    'auth/invalid-email': "That email address doesn't look right.",
+    'auth/user-not-found': "No account with that email.",
+    'auth/wrong-password': "Wrong password.",
+    'auth/invalid-credential': "Email or password is incorrect.",
+    'auth/too-many-requests': "Too many attempts — wait a bit and try again.",
+    'auth/network-request-failed': "Network error — check your connection."
+  };
+  return map[code] || "Couldn't sign in — try again.";
+}
+document.getElementById('signInBtn').onclick = async ()=>{
+  const email = document.getElementById('gateEmail').value.trim();
+  const pass = document.getElementById('gatePassword').value;
+  const errEl = document.getElementById('gateError');
+  errEl.textContent = '';
+  if(!CONFIG_IS_SET){ errEl.textContent = "App isn't connected yet — see SETUP.md."; return; }
+  if(!email || !pass){ errEl.textContent = "Enter both email and password."; return; }
+  try{
+    await auth.signInWithEmailAndPassword(email, pass);
+  }catch(err){
+    errEl.textContent = friendlyAuthError(err.code);
+  }
+};
+document.getElementById('gatePassword').addEventListener('keydown', e=>{
+  if(e.key === 'Enter') document.getElementById('signInBtn').click();
+});
+document.getElementById('signOutBtn').onclick = ()=>{
+  if(confirm("Sign out of Shelf on this device?")) auth.signOut();
+};
 
 /* ---------- defaults ---------- */
 const DEFAULT_CATEGORIES = ["Food","Cleaning","Toiletries","Pets","Other"];
