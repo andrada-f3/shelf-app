@@ -465,6 +465,11 @@ if (CONFIG_IS_SET){
   });
   auth = firebase.auth();
   auth.onAuthStateChanged(u => {
+    if (u && u.isAnonymous){
+      // Leftover session from before real sign-in existed — reject it.
+      auth.signOut();
+      return; // onAuthStateChanged will fire again with u = null
+    }
     currentUser = u;
     const gate = document.getElementById('signInGate');
     const root = document.getElementById('appRoot');
