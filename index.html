@@ -100,9 +100,16 @@
     font-family:'Archivo',sans-serif;font-weight:700;font-size:11px;letter-spacing:.12em;
     text-transform:uppercase;color:var(--ink-soft);margin:18px 4px 8px;
   }
+  .swipe-wrap{position:relative;border-radius:12px;margin-bottom:8px;overflow:hidden;}
+  .swipe-action{
+    position:absolute;inset:0;display:flex;align-items:center;justify-content:flex-end;padding-right:24px;
+    font-family:'Archivo',sans-serif;font-weight:700;font-size:13px;color:#fff;
+  }
+  .swipe-wrap[data-paused="0"] .swipe-action{background:var(--amber);}
+  .swipe-wrap[data-paused="1"] .swipe-action{background:var(--red);}
   .item{
-    background:var(--card);border:1px solid var(--line);border-radius:12px;
-    padding:12px 13px;margin-bottom:8px;display:flex;gap:11px;align-items:center;
+    background:var(--card);border:1px solid var(--line);border-radius:12px;position:relative;z-index:1;
+    padding:12px 13px;display:flex;gap:11px;align-items:center;touch-action:pan-y;
   }
   .item .dot{width:9px;height:9px;border-radius:50%;flex:0 0 auto;}
   .item-main{flex:1;min-width:0;}
@@ -192,6 +199,12 @@
   }
   .gate-card{width:100%;max-width:360px;}
   .gate-error{color:var(--red);font-size:12.5px;margin:10px 0 0;min-height:16px;}
+
+  .sheet-actions{
+    position:sticky;bottom:0;background:var(--paper);
+    margin:20px -18px 0;padding:14px 18px calc(14px + env(safe-area-inset-bottom, 0px));
+    border-top:1px solid var(--line);
+  }
   .helper{font-size:11px;color:var(--ink-soft);margin-top:4px;}
 
   .export-cats,.export-shops{display:flex;flex-wrap:wrap;gap:7px;margin-top:8px;}
@@ -207,8 +220,13 @@
     position:fixed;bottom:100px;left:50%;transform:translateX(-50%);
     background:var(--ink);color:var(--paper);padding:10px 18px;border-radius:20px;font-size:13px;
     font-weight:600;z-index:100;opacity:0;pointer-events:none;transition:opacity .2s;
+    display:flex;align-items:center;gap:14px;max-width:88vw;
   }
-  .toast.show{opacity:1;}
+  .toast.show{opacity:1;pointer-events:auto;}
+  .toast-undo{
+    background:none;border:none;color:var(--paper);font-weight:700;text-decoration:underline;
+    cursor:pointer;padding:0;font-size:13px;font-family:'Inter',sans-serif;flex:0 0 auto;
+  }
 
   .status-banner{
     display:none;margin:0 4px 12px;padding:10px 12px;border-radius:10px;font-size:12.5px;
@@ -250,7 +268,7 @@
 <header>
   <span class="label-tag">Shared &amp; live</span>
   <h1>Shelf</h1>
-  <p>What's in the house, and when it runs out. <span class="mono" style="opacity:.55;">v1.4</span></p>
+  <p>What's in the house, and when it runs out. <span class="mono" style="opacity:.55;">v1.5</span></p>
   <div class="toolbar">
     <input class="search" id="searchInput" placeholder="Search items…" autocomplete="off">
     <button class="icon-btn" id="sortBtn" title="Sort">⇅</button>
@@ -340,9 +358,11 @@
     <label>Notes (optional)</label>
     <textarea id="fNotes" placeholder="Brand, variant, anything useful…"></textarea>
 
-    <button class="primary-btn" id="saveItemBtn">Save item</button>
-    <button class="secondary-btn" id="duplicateItemBtn" style="display:none;">Duplicate as new item</button>
-    <button class="danger-btn" id="deleteItemBtn" style="display:none;">Delete item</button>
+    <div class="sheet-actions">
+      <button class="primary-btn" id="saveItemBtn" style="margin-top:0;">Save item</button>
+      <button class="secondary-btn" id="duplicateItemBtn" style="display:none;">Duplicate as new item</button>
+      <button class="danger-btn" id="deleteItemBtn" style="display:none;">Delete item</button>
+    </div>
   </div>
 </div>
 
@@ -413,7 +433,7 @@
   </div>
 </div>
 
-<div class="toast" id="toast"></div>
+<div class="toast" id="toast"><span id="toastMsg"></span><button id="toastUndo" class="toast-undo" style="display:none;">Undo</button></div>
 
 </div><!-- /appRoot -->
 
@@ -758,24 +778,30 @@ function renderItemCard(item){
         <button class="qty-btn" data-adj="${esc(item.id)}:1">+</button>
       </div>`;
   return `
-    <div class="item ${item.paused?'muted':''}" data-id="${esc(item.id)}">
-      <span class="dot" style="background:${color}"></span>
-      <div class="item-main" data-open="${esc(item.id)}">
-        <div class="item-name">${esc(item.name)}</div>
-        <div class="item-meta">
-          <span class="mono">${esc(item.quantity)} ${esc(item.unit||'')}</span>
-          <span>${metaBits.map(esc).join(' · ')}</span>
-          ${badges}
+    <div class="swipe-wrap" data-swipe-id="${esc(item.id)}" data-paused="${item.paused?1:0}">
+      <div class="swipe-action">${item.paused ? 'Delete' : 'Pause'}</div>
+      <div class="item ${item.paused?'muted':''}" data-id="${esc(item.id)}">
+        <span class="dot" style="background:${color}"></span>
+        <div class="item-main" data-open="${esc(item.id)}">
+          <div class="item-name">${esc(item.name)}</div>
+          <div class="item-meta">
+            <span class="mono">${esc(item.quantity)} ${esc(item.unit||'')}</span>
+            <span>${metaBits.map(esc).join(' · ')}</span>
+            ${badges}
+          </div>
         </div>
+        ${rightControl}
       </div>
-      ${rightControl}
     </div>`;
 }
 function esc(s){ return String(s??'').replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
 
 /* ---------- item CRUD ---------- */
 document.getElementById('addFab').onclick = ()=> openItemSheet(null);
-document.getElementById('listRoot').addEventListener('click', e=>{
+const listRoot = document.getElementById('listRoot');
+let suppressNextClick = false;
+listRoot.addEventListener('click', e=>{
+  if(suppressNextClick){ suppressNextClick = false; return; }
   const openId = e.target.closest('[data-open]')?.dataset.open;
   if(openId){ openItemSheet(items.find(i=>i.id===openId)); return; }
   const adj = e.target.closest('[data-adj]')?.dataset.adj;
@@ -796,6 +822,85 @@ async function reviveItem(id){
     openItemSheet(item ? {...item, paused:false} : null);
     showToast("Revived — update the quantity and save");
   }catch(err){ showToast("Couldn't revive: " + err.message); }
+}
+
+/* ---------- swipe gestures: swipe left = pause (active list) or delete (paused list) ---------- */
+const SWIPE_THRESHOLD = -90;
+let swipeState = null;
+listRoot.addEventListener('pointerdown', e=>{
+  const wrap = e.target.closest('.swipe-wrap');
+  if(!wrap) return;
+  swipeState = {
+    id: wrap.dataset.swipeId,
+    paused: wrap.dataset.paused === '1',
+    itemEl: wrap.querySelector('.item'),
+    startX: e.clientX, startY: e.clientY,
+    dx: 0, dragging: false, pointerId: e.pointerId
+  };
+});
+listRoot.addEventListener('pointermove', e=>{
+  if(!swipeState || swipeState.pointerId !== e.pointerId) return;
+  const dx = e.clientX - swipeState.startX;
+  const dy = e.clientY - swipeState.startY;
+  if(!swipeState.dragging){
+    if(Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy)){
+      swipeState.dragging = true;
+      swipeState.itemEl.style.transition = 'none';
+    } else if(Math.abs(dy) > 10){
+      swipeState = null;
+      return;
+    } else {
+      return;
+    }
+  }
+  swipeState.dx = Math.min(0, dx);
+  swipeState.itemEl.style.transform = `translateX(${swipeState.dx}px)`;
+});
+function finishSwipe(){
+  if(!swipeState) return;
+  const {itemEl, dx, id, paused, dragging} = swipeState;
+  itemEl.style.transition = 'transform .18s ease';
+  if(dragging){
+    suppressNextClick = true;
+    if(dx < SWIPE_THRESHOLD){
+      itemEl.style.transform = 'translateX(-100%)';
+      setTimeout(()=>{ paused ? swipeDelete(id) : swipePause(id); }, 160);
+    } else {
+      itemEl.style.transform = 'translateX(0)';
+    }
+  }
+  swipeState = null;
+}
+listRoot.addEventListener('pointerup', e=>{
+  if(!swipeState || swipeState.pointerId !== e.pointerId) return;
+  finishSwipe();
+});
+listRoot.addEventListener('pointercancel', e=>{
+  if(!swipeState || swipeState.pointerId !== e.pointerId) return;
+  finishSwipe();
+});
+async function swipePause(id){
+  const item = items.find(i=>i.id===id);
+  if(!item) return;
+  try{
+    await db.collection('items').doc(id).update({paused:true, updatedAt: firebase.firestore.FieldValue.serverTimestamp()});
+    showUndoToast(`"${item.name}" paused`, async ()=>{
+      await db.collection('items').doc(id).update({paused:false, updatedAt: firebase.firestore.FieldValue.serverTimestamp()});
+    });
+  }catch(err){ showToast("Couldn't pause: " + err.message); }
+}
+async function swipeDelete(id){
+  const item = items.find(i=>i.id===id);
+  if(!item) return;
+  const snapshot = {...item};
+  delete snapshot.id;
+  try{
+    await db.collection('items').doc(id).delete();
+    showUndoToast(`"${item.name}" deleted`, async ()=>{
+      snapshot.updatedAt = firebase.firestore.FieldValue.serverTimestamp();
+      await db.collection('items').add(snapshot);
+    });
+  }catch(err){ showToast("Couldn't delete: " + err.message); }
 }
 
 function openItemSheet(item){
@@ -999,13 +1104,28 @@ window.addEventListener('popstate', ()=>{
 });
 
 let toastTimer;
+let toastUndoHandler = null;
 function showToast(msg){
+  showUndoToast(msg, null);
+}
+function showUndoToast(msg, undoFn){
   const t = document.getElementById('toast');
-  t.textContent = msg;
+  document.getElementById('toastMsg').textContent = msg;
+  const undoBtn = document.getElementById('toastUndo');
+  toastUndoHandler = undoFn;
+  undoBtn.style.display = undoFn ? 'inline' : 'none';
   t.classList.add('show');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(()=>t.classList.remove('show'), 2200);
+  toastTimer = setTimeout(()=>{ t.classList.remove('show'); toastUndoHandler = null; }, undoFn ? 4500 : 2200);
 }
+document.getElementById('toastUndo').onclick = async ()=>{
+  if(!toastUndoHandler) return;
+  const fn = toastUndoHandler;
+  toastUndoHandler = null;
+  document.getElementById('toast').classList.remove('show');
+  clearTimeout(toastTimer);
+  await fn();
+};
 
 /* ---------- theme toggle ---------- */
 const themeBtn = document.getElementById('themeBtn');

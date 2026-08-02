@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.5
+- Save/Duplicate/Delete buttons in the add/edit sheet are now pinned to the bottom, always visible without scrolling.
+- Swipe left on an item in the main list to pause it; swipe left on a paused item to delete it. Both show a few seconds of "Undo" in a toast before the action is final.
+
 ## v1.4
 - Replaced open anonymous sign-in with a real login screen (email + password). No public sign-up anywhere in the app — the only way in is an account you create yourself in the Firebase console, so no credentials or emails ever appear in the code or GitHub repo.
 - Added a "Sign out" button (bottom of Manage Lists).
