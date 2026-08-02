@@ -191,7 +191,6 @@
     width:100%;background:none;color:var(--ink);border:1px solid var(--line);border-radius:12px;padding:12px;
     font-weight:600;font-size:13px;margin-top:10px;cursor:pointer;
   }
-  .secondary-btn.toggled{background:var(--amber-bg);color:var(--amber);border-color:var(--amber);}
   .checkbox-row{display:flex;align-items:center;gap:9px;margin-top:16px;font-size:13px;color:var(--ink);}
   .checkbox-row input{width:auto;}
 
@@ -270,7 +269,7 @@
 <header>
   <span class="label-tag">Shared &amp; live</span>
   <h1>Shelf</h1>
-  <p>What's in the house, and when it runs out. <span class="mono" style="opacity:.55;">v1.5.1</span></p>
+  <p>What's in the house, and when it runs out. <span class="mono" style="opacity:.55;">v1.6</span></p>
   <div class="toolbar">
     <input class="search" id="searchInput" placeholder="Search items…" autocomplete="off">
     <button class="icon-btn" id="sortBtn" title="Sort">⇅</button>
@@ -324,6 +323,13 @@
       <button type="button" data-addnew="category">Add</button>
     </div>
 
+    <label>Sub-category (optional)</label>
+    <select id="fSubcategory"></select>
+    <div class="add-new-inline" id="fSubcategoryNewWrap" style="display:none;">
+      <input id="fSubcategoryNew" placeholder="New sub-category name">
+      <button type="button" data-addnew="subcategory">Add</button>
+    </div>
+
     <label>Shop</label>
     <select id="fShop"></select>
     <div class="add-new-inline" id="fShopNewWrap" style="display:none;">
@@ -356,10 +362,10 @@
     <textarea id="fNotes" placeholder="Brand, variant, anything useful…"></textarea>
 
     <div class="sheet-actions">
-      <button class="primary-btn" id="saveItemBtn" style="margin-top:0;">Save item</button>
-      <button class="secondary-btn" id="togglePauseBtn" data-paused="0">⏸ Pause — not restocking</button>
-      <button class="secondary-btn" id="duplicateItemBtn" style="display:none;">Duplicate as new item</button>
-      <button class="danger-btn" id="deleteItemBtn" style="display:none;">Delete item</button>
+      <button class="primary-btn" id="saveItemBtn" style="margin-top:0;">Save</button>
+      <button class="secondary-btn" id="togglePauseBtn" style="display:none;">Pause</button>
+      <button class="secondary-btn" id="duplicateItemBtn" style="display:none;">Duplicate</button>
+      <button class="danger-btn" id="deleteItemBtn" style="display:none;">Delete</button>
     </div>
   </div>
 </div>
@@ -406,6 +412,15 @@
       <div class="add-new-inline">
         <input id="manageCatsNew" placeholder="New category name">
         <button type="button" data-manageadd="categories">Add</button>
+      </div>
+    </div>
+
+    <div class="manage-section">
+      <label>Sub-categories</label>
+      <div id="manageSubcats"></div>
+      <div class="add-new-inline">
+        <input id="manageSubcatsNew" placeholder="New sub-category name">
+        <button type="button" data-manageadd="subcategories">Add</button>
       </div>
     </div>
 
@@ -535,11 +550,13 @@ document.getElementById('signOutBtn').onclick = ()=>{
 
 /* ---------- defaults ---------- */
 const DEFAULT_CATEGORIES = ["Food","Cleaning","Toiletries","Pets","Other"];
+const DEFAULT_SUBCATEGORIES = ["Spices","Dairy","Meat","Sweets","Fruit","Veggies"];
 const DEFAULT_SHOPS = ["Lidl","Mega","General","Market","eMag","Amazon","Biomarket","Other"];
 const DEFAULT_LOCATIONS = ["Fridge","Freezer","Pantry","Bathroom","Other"];
 const CATEGORY_COLORS = {Food:"#2F6B4F",Cleaning:"#4A6FA5",Toiletries:"#8B5FA3",Pets:"#B8752A",Other:"#6B6A60"};
 
 let categories = [...DEFAULT_CATEGORIES];
+let subcategories = [...DEFAULT_SUBCATEGORIES];
 let shops = [...DEFAULT_SHOPS];
 let locations = [...DEFAULT_LOCATIONS];
 let items = [];
@@ -548,13 +565,14 @@ let sortMode = "expiry"; // expiry | name | runway
 let searchTerm = "";
 
 /* ---------- data init & sync ---------- */
-const DEFAULTS_MAP = {categories:DEFAULT_CATEGORIES, shops:DEFAULT_SHOPS, locations:DEFAULT_LOCATIONS};
+const DEFAULTS_MAP = {categories:DEFAULT_CATEGORIES, shops:DEFAULT_SHOPS, locations:DEFAULT_LOCATIONS, subcategories:DEFAULT_SUBCATEGORIES};
 
 function initData(){
   db.collection('meta').doc('settings').onSnapshot(doc=>{
     if(!doc.exists){ seedDefaultsIfMissing(); return; }
     const d = doc.data();
     categories = (d.categories && d.categories.length) ? d.categories : DEFAULT_CATEGORIES;
+    subcategories = (d.subcategories && d.subcategories.length) ? d.subcategories : DEFAULT_SUBCATEGORIES;
     shops = (d.shops && d.shops.length) ? d.shops : DEFAULT_SHOPS;
     locations = (d.locations && d.locations.length) ? d.locations : DEFAULT_LOCATIONS;
     populateSelects();
@@ -575,12 +593,13 @@ async function seedDefaultsIfMissing(){
     await db.runTransaction(async t=>{
       const doc = await t.get(ref);
       if(!doc.exists){
-        t.set(ref, {categories:DEFAULT_CATEGORIES, shops:DEFAULT_SHOPS, locations:DEFAULT_LOCATIONS});
+        t.set(ref, {categories:DEFAULT_CATEGORIES, subcategories:DEFAULT_SUBCATEGORIES, shops:DEFAULT_SHOPS, locations:DEFAULT_LOCATIONS});
       }
     });
   }catch(e){ /* another device may have seeded it first — fine */ }
 }
-const KIND_FIELD = {category:'categories', shop:'shops', location:'locations'};
+const KIND_FIELD = {category:'categories', subcategory:'subcategories', shop:'shops', location:'locations'};
+const FIELD_SINGULAR = {categories:'category', subcategories:'subcategory', shops:'shop', locations:'location'};
 async function addCustomValue(kind, value){
   value = value.trim();
   if(!value) return;
@@ -594,9 +613,9 @@ async function addListValue(field, value){
   );
 }
 async function deleteListValue(field, value){
-  const cur = field==='categories' ? categories : field==='shops' ? shops : locations;
+  const cur = localArrayFor(field);
   if(cur.length <= 1){ showToast("Keep at least one"); return; }
-  const fieldSingular = field==='categories' ? 'category' : field==='shops' ? 'shop' : 'location';
+  const fieldSingular = FIELD_SINGULAR[field];
   const affected = items.filter(i=>i[fieldSingular]===value);
   const msg = affected.length>0
     ? `${affected.length} item${affected.length===1?'':'s'} currently use "${value}" as their ${fieldSingular}. Deleting it will clear that field on those items — they'll show as unset. Continue?`
@@ -651,6 +670,7 @@ function lowStockStatus(item){
 /* ---------- rendering ---------- */
 function populateSelects(){
   fillSelect('fCategory', categories);
+  fillSelect('fSubcategory', subcategories, true);
   fillSelect('fShop', shops);
   fillSelect('fLocation', locations, true);
 }
@@ -683,6 +703,7 @@ function renderExportFilters(){
 }
 function renderManageSheet(){
   renderManageGroup('manageCats', categories, 'categories');
+  renderManageGroup('manageSubcats', subcategories, 'subcategories');
   renderManageGroup('manageShops', shops, 'shops');
   renderManageGroup('manageLocations', locations, 'locations');
 }
@@ -701,13 +722,25 @@ document.getElementById('manageOverlay').addEventListener('click', e=>{
   const btn = e.target.closest('[data-delvalue]');
   if(btn) deleteListValue(btn.dataset.delfield, btn.dataset.delvalue);
 });
+const MANAGE_ADD_INPUT_IDS = {
+  categories:'manageCatsNew', subcategories:'manageSubcatsNew', shops:'manageShopsNew', locations:'manageLocationsNew'
+};
 document.querySelectorAll('[data-manageadd]').forEach(btn=>{
-  btn.onclick = ()=>{
+  btn.onclick = async ()=>{
     const field = btn.dataset.manageadd;
-    const inputId = 'manage' + field[0].toUpperCase() + field.slice(1) + 'New';
-    const input = document.getElementById(inputId);
-    addListValue(field, input.value);
+    const input = document.getElementById(MANAGE_ADD_INPUT_IDS[field]);
+    const val = input.value.trim();
+    if(!val) return;
+    const arr = localArrayFor(field);
+    if(arr && !arr.includes(val)) arr.push(val);
+    renderManageSheet();
+    populateSelects();
     input.value = '';
+    try{
+      await addListValue(field, val);
+    }catch(err){
+      showToast("Couldn't save: " + err.message);
+    }
   };
 });
 
@@ -767,7 +800,7 @@ function renderItemCard(item){
   if(item.paused) badges += `<span class="badge paused">Paused</span>`;
   if(fresh) badges += `<span class="badge ${fresh.level}">${fresh.label}</span>`;
   if(low) badges += `<span class="badge low">Low stock</span>`;
-  const metaBits = [item.category, item.shop, item.location].filter(Boolean);
+  const metaBits = [item.category, item.subcategory, item.shop, item.location].filter(Boolean);
   const rightControl = item.paused
     ? `<button class="revive-btn" data-revive="${esc(item.id)}">↻ Revive</button>`
     : `<div class="qty-ctrl">
@@ -901,6 +934,7 @@ async function swipeDelete(id){
   }catch(err){ showToast("Couldn't delete: " + err.message); }
 }
 
+let currentItemPaused = false;
 function openItemSheet(item){
   document.getElementById('itemFormTitle').textContent = item ? 'Edit item' : 'Add item';
   document.getElementById('editingId').value = item ? item.id : '';
@@ -909,34 +943,28 @@ function openItemSheet(item){
   document.getElementById('fUnit').value = item?.unit || 'pcs';
   populateSelects();
   document.getElementById('fCategory').value = item?.category || categories[0];
+  document.getElementById('fSubcategory').value = item?.subcategory || '';
   document.getElementById('fShop').value = item?.shop || (shops.includes('Other') ? 'Other' : shops[0]);
   document.getElementById('fLocation').value = item?.location || '';
   document.getElementById('fExpiry').value = item?.expiryDate || '';
   document.getElementById('fBought').value = item?.boughtDate || '';
   document.getElementById('fThreshold').value = item?.lowStockThreshold ?? '';
-  setPauseToggle(!!item?.paused);
+  currentItemPaused = !!item?.paused;
+  document.getElementById('togglePauseBtn').textContent = currentItemPaused ? 'Resume' : 'Pause';
+  document.getElementById('togglePauseBtn').style.display = item ? 'block' : 'none';
   document.getElementById('fNotes').value = item?.notes || '';
   document.getElementById('deleteItemBtn').style.display = item ? 'block' : 'none';
   document.getElementById('duplicateItemBtn').style.display = item ? 'block' : 'none';
-  ['fCategoryNewWrap','fShopNewWrap','fLocationNewWrap'].forEach(id=>document.getElementById(id).style.display='none');
+  ['fCategoryNewWrap','fSubcategoryNewWrap','fShopNewWrap','fLocationNewWrap'].forEach(id=>document.getElementById(id).style.display='none');
   document.getElementById('itemOverlay').classList.add('show');
   history.pushState({overlay:'itemOverlay'}, '');
 }
-function setPauseToggle(isPaused){
-  const btn = document.getElementById('togglePauseBtn');
-  btn.dataset.paused = isPaused ? '1' : '0';
-  btn.textContent = isPaused ? '▶ Resume tracking' : '⏸ Pause — not restocking';
-  btn.classList.toggle('toggled', isPaused);
-}
-document.getElementById('togglePauseBtn').onclick = ()=>{
-  const btn = document.getElementById('togglePauseBtn');
-  setPauseToggle(btn.dataset.paused !== '1');
-};
 document.getElementById('duplicateItemBtn').onclick = ()=>{
   document.getElementById('editingId').value = '';
   document.getElementById('itemFormTitle').textContent = 'Add item (copy)';
   document.getElementById('deleteItemBtn').style.display = 'none';
   document.getElementById('duplicateItemBtn').style.display = 'none';
+  document.getElementById('togglePauseBtn').style.display = 'none';
   document.getElementById('fName').focus();
   showToast("Now creating a copy — adjust quantity/expiry, then save");
 };
@@ -948,52 +976,82 @@ document.querySelectorAll('.overlay').forEach(ov=>{
   ov.addEventListener('click', e=>{ if(e.target===ov) closeOverlay(ov.id); });
 });
 
-['fCategory','fShop','fLocation'].forEach(id=>{
+['fCategory','fSubcategory','fShop','fLocation'].forEach(id=>{
   document.getElementById(id).addEventListener('change', e=>{
     const wrapId = id + 'NewWrap';
     document.getElementById(wrapId).style.display = e.target.value === '__new__' ? 'flex' : 'none';
   });
 });
+function localArrayFor(field){
+  if(field==='categories') return categories;
+  if(field==='shops') return shops;
+  if(field==='locations') return locations;
+  if(field==='subcategories') return subcategories;
+}
 document.querySelectorAll('[data-addnew]').forEach(btn=>{
   btn.onclick = async ()=>{
     const kind = btn.dataset.addnew;
+    const field = KIND_FIELD[kind];
     const inputId = 'f' + kind[0].toUpperCase() + kind.slice(1) + 'New';
+    const selId = 'f' + kind[0].toUpperCase() + kind.slice(1);
     const val = document.getElementById(inputId).value.trim();
     if(!val) return;
-    await addCustomValue(kind, val);
+
+    const arr = localArrayFor(field);
+    if(arr && !arr.includes(val)) arr.push(val);
+    populateSelects();
+    document.getElementById(selId).value = val;
     document.getElementById(inputId).value = '';
-    document.getElementById('f'+kind[0].toUpperCase()+kind.slice(1)+'NewWrap').style.display='none';
-    setTimeout(()=>{
-      const sel = document.getElementById('f'+kind[0].toUpperCase()+kind.slice(1));
-      sel.value = val;
-    }, 300);
+    document.getElementById(selId + 'NewWrap').style.display = 'none';
+
+    try{
+      await addListValue(field, val);
+    }catch(err){
+      showToast("Couldn't save the new value: " + err.message);
+    }
   };
 });
 
-document.getElementById('saveItemBtn').onclick = async ()=>{
+async function saveItemFromForm(overridePaused){
   const name = document.getElementById('fName').value.trim();
-  if(!name){ showToast("Give it a name first"); return; }
+  if(!name){ showToast("Give it a name first"); return false; }
   const id = document.getElementById('editingId').value;
   const data = {
     name,
     quantity: Number(document.getElementById('fQty').value) || 0,
     unit: document.getElementById('fUnit').value,
     category: valOrDefault('fCategory'),
+    subcategory: valOrDefault('fSubcategory') || null,
     shop: valOrDefault('fShop'),
     location: valOrDefault('fLocation') || null,
     expiryDate: document.getElementById('fExpiry').value || null,
     boughtDate: document.getElementById('fBought').value || null,
     lowStockThreshold: document.getElementById('fThreshold').value === '' ? null : Number(document.getElementById('fThreshold').value),
-    paused: document.getElementById('togglePauseBtn').dataset.paused === '1',
+    paused: overridePaused !== undefined ? overridePaused : currentItemPaused,
     notes: document.getElementById('fNotes').value.trim(),
     updatedAt: firebase.firestore.FieldValue.serverTimestamp()
   };
   try{
     if(id){ await db.collection('items').doc(id).update(data); }
     else{ await db.collection('items').add(data); }
+    return true;
+  }catch(err){ showToast("Couldn't save: " + err.message); return false; }
+}
+document.getElementById('saveItemBtn').onclick = async ()=>{
+  const id = document.getElementById('editingId').value;
+  const ok = await saveItemFromForm();
+  if(ok){
     closeOverlay('itemOverlay');
     showToast(id ? "Item updated" : "Item added");
-  }catch(err){ showToast("Couldn't save: " + err.message); }
+  }
+};
+document.getElementById('togglePauseBtn').onclick = async ()=>{
+  const newPaused = !currentItemPaused;
+  const ok = await saveItemFromForm(newPaused);
+  if(ok){
+    closeOverlay('itemOverlay');
+    showToast(newPaused ? "Paused" : "Resumed");
+  }
 };
 function valOrDefault(id){
   const el = document.getElementById(id);

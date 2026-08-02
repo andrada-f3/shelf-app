@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.6
+- Sticky footer buttons simplified to single words: Save, Pause/Resume, Duplicate, Delete.
+- Pause is now an immediate action from the edit sheet: tap it and the item saves, closes, and moves straight to the Paused section — no separate Save click needed.
+- Fixed a real bug where adding a brand-new location (or category, in the Manage Lists screen specifically) could silently fail to actually get selected/saved, caused by a fragile timing assumption and, for Manage Lists categories, a mismatched element ID. Both add-new flows now update instantly and reliably.
+- Added an optional **Sub-category** field per item (e.g. Food → Spices, Dairy, Meat, Sweets, Fruit, Veggies), with the same add-your-own/manage/delete support as Location and Shop.
+- **Requires a Firestore rules update** — see setup notes.
+
 ## v1.5.1
 - Fixed a rendering bug where paused items' muted styling made the swipe-action layer bleed through and garble button text (now only the text is muted, not the whole card).
 - Moved "Pause" out of a checkbox buried in the form into a proper toggle button in the sticky footer, next to Save/Duplicate/Delete.
