@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.5.1
+- Fixed a rendering bug where paused items' muted styling made the swipe-action layer bleed through and garble button text (now only the text is muted, not the whole card).
+- Moved "Pause" out of a checkbox buried in the form into a proper toggle button in the sticky footer, next to Save/Duplicate/Delete.
+
 ## v1.5
 - Save/Duplicate/Delete buttons in the add/edit sheet are now pinned to the bottom, always visible without scrolling.
 - Swipe left on an item in the main list to pause it; swipe left on a paused item to delete it. Both show a few seconds of "Undo" in a toast before the action is final.

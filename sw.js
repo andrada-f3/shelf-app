@@ -1,4 +1,4 @@
-const CACHE = "shelf-v7";
+const CACHE = "shelf-v8";
 const SHELL = [
   "./index.html",
   "./manifest.json",

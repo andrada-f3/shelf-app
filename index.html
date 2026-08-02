@@ -124,7 +124,8 @@
   .badge.low{background:var(--amber-bg);color:var(--amber);}
   .badge.paused{background:var(--line);color:var(--ink-soft);}
 
-  .item.muted{opacity:.6;}
+  .item.muted .item-name{color:var(--ink-soft);}
+  .item.muted .item-meta{opacity:.75;}
   .revive-btn{
     flex:0 0 auto;background:var(--green-bg);color:var(--green);border:1px solid var(--green);border-radius:20px;
     padding:8px 13px;font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;
@@ -190,6 +191,7 @@
     width:100%;background:none;color:var(--ink);border:1px solid var(--line);border-radius:12px;padding:12px;
     font-weight:600;font-size:13px;margin-top:10px;cursor:pointer;
   }
+  .secondary-btn.toggled{background:var(--amber-bg);color:var(--amber);border-color:var(--amber);}
   .checkbox-row{display:flex;align-items:center;gap:9px;margin-top:16px;font-size:13px;color:var(--ink);}
   .checkbox-row input{width:auto;}
 
@@ -268,7 +270,7 @@
 <header>
   <span class="label-tag">Shared &amp; live</span>
   <h1>Shelf</h1>
-  <p>What's in the house, and when it runs out. <span class="mono" style="opacity:.55;">v1.5</span></p>
+  <p>What's in the house, and when it runs out. <span class="mono" style="opacity:.55;">v1.5.1</span></p>
   <div class="toolbar">
     <input class="search" id="searchInput" placeholder="Search items…" autocomplete="off">
     <button class="icon-btn" id="sortBtn" title="Sort">⇅</button>
@@ -350,16 +352,12 @@
     <label>Low-stock alert when quantity drops below (optional)</label>
     <input id="fThreshold" type="number" inputmode="decimal" min="0" step="1" placeholder="e.g. 2">
 
-    <div class="checkbox-row">
-      <input type="checkbox" id="fPaused">
-      <span>Paused — not restocking right now (hides the low-stock alert for this item)</span>
-    </div>
-
     <label>Notes (optional)</label>
     <textarea id="fNotes" placeholder="Brand, variant, anything useful…"></textarea>
 
     <div class="sheet-actions">
       <button class="primary-btn" id="saveItemBtn" style="margin-top:0;">Save item</button>
+      <button class="secondary-btn" id="togglePauseBtn" data-paused="0">⏸ Pause — not restocking</button>
       <button class="secondary-btn" id="duplicateItemBtn" style="display:none;">Duplicate as new item</button>
       <button class="danger-btn" id="deleteItemBtn" style="display:none;">Delete item</button>
     </div>
@@ -916,7 +914,7 @@ function openItemSheet(item){
   document.getElementById('fExpiry').value = item?.expiryDate || '';
   document.getElementById('fBought').value = item?.boughtDate || '';
   document.getElementById('fThreshold').value = item?.lowStockThreshold ?? '';
-  document.getElementById('fPaused').checked = !!item?.paused;
+  setPauseToggle(!!item?.paused);
   document.getElementById('fNotes').value = item?.notes || '';
   document.getElementById('deleteItemBtn').style.display = item ? 'block' : 'none';
   document.getElementById('duplicateItemBtn').style.display = item ? 'block' : 'none';
@@ -924,6 +922,16 @@ function openItemSheet(item){
   document.getElementById('itemOverlay').classList.add('show');
   history.pushState({overlay:'itemOverlay'}, '');
 }
+function setPauseToggle(isPaused){
+  const btn = document.getElementById('togglePauseBtn');
+  btn.dataset.paused = isPaused ? '1' : '0';
+  btn.textContent = isPaused ? '▶ Resume tracking' : '⏸ Pause — not restocking';
+  btn.classList.toggle('toggled', isPaused);
+}
+document.getElementById('togglePauseBtn').onclick = ()=>{
+  const btn = document.getElementById('togglePauseBtn');
+  setPauseToggle(btn.dataset.paused !== '1');
+};
 document.getElementById('duplicateItemBtn').onclick = ()=>{
   document.getElementById('editingId').value = '';
   document.getElementById('itemFormTitle').textContent = 'Add item (copy)';
@@ -976,7 +984,7 @@ document.getElementById('saveItemBtn').onclick = async ()=>{
     expiryDate: document.getElementById('fExpiry').value || null,
     boughtDate: document.getElementById('fBought').value || null,
     lowStockThreshold: document.getElementById('fThreshold').value === '' ? null : Number(document.getElementById('fThreshold').value),
-    paused: document.getElementById('fPaused').checked,
+    paused: document.getElementById('togglePauseBtn').dataset.paused === '1',
     notes: document.getElementById('fNotes').value.trim(),
     updatedAt: firebase.firestore.FieldValue.serverTimestamp()
   };
