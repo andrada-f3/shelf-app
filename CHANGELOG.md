@@ -1,5 +1,18 @@
 # Changelog
 
+## v1.9
+- **New: Activity log.** A 🕐 icon in the header shows the most recent 200 actions across both accounts — added, edited, used (+/− taps), restocked, stock removed, deleted, and thrown out — each with who did it and when.
+- Logging is best-effort: if it ever fails, it never blocks or breaks the actual action it's describing.
+- **Requires a Firestore rules update** — see setup notes (new `activity` collection).
+
+## v1.8
+- Renamed for clarity: Revive → **Restock**, Pause → **Remove stock**, Delete → **Delete item**, Waste → **Throw out** (buttons, swipe labels, and toasts all updated).
+- Log Waste: quantity field now selects its prefilled value on focus (type to replace, like elsewhere in the app).
+- Log Waste: unit is now an editable dropdown, not fixed to the item's — e.g. log "2 pcs" thrown out even if the item is tracked in kg.
+- If the logged unit matches the item's unit, inventory is reduced automatically and you're told the new quantity. If it doesn't match, inventory is left untouched and you get a clear warning — the log entry still saves either way.
+- Waste log entries are no longer one-tap-delete. Tapping an entry now opens it for editing (quantity, unit, reason, date) — deleting is still possible but tucked inside that edit screen, not a stray ✕ on the row.
+- No Firestore rules changes needed for this version — all changes are UI/logic only, no new fields.
+
 ## v1.7
 - **New: waste tracking.** Open any item and tap **Waste** to log how much you're throwing out and why (Expired/spoiled, Made too much, Didn't like it, Bought too much, Other — customizable like categories). The item's quantity reduces automatically.
 - **New: Waste log** — a 🗑 icon in the header opens a running history of everything logged, with a quick monthly summary (count + most-wasted category). Individual entries can be removed if logged by mistake.

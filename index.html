@@ -202,11 +202,15 @@
   .waste-stat{font-size:13px;color:var(--ink-soft);margin-bottom:4px;}
   .waste-stat strong{color:var(--ink);}
   .waste-row{
-    background:var(--card);border:1px solid var(--line);border-radius:12px;
+    background:var(--card);border:1px solid var(--line);border-radius:12px;cursor:pointer;
     padding:12px 13px;margin-bottom:8px;display:flex;gap:11px;align-items:center;
   }
   .waste-row-main{flex:1;min-width:0;}
   .badge.waste-reason{background:var(--line);color:var(--ink-soft);}
+  .activity-row{
+    background:var(--card);border:1px solid var(--line);border-radius:12px;
+    padding:11px 13px;margin-bottom:7px;
+  }
   .confirm-log-btn{
     width:100%;background:var(--amber);color:#fff;border:none;border-radius:12px;padding:13px;
     font-family:'Archivo',sans-serif;font-weight:700;font-size:14px;margin-top:20px;cursor:pointer;
@@ -287,12 +291,13 @@
 <header>
   <span class="label-tag">Shared &amp; live</span>
   <h1>Shelf</h1>
-  <p>What's in the house, and when it runs out. <span class="mono" style="opacity:.55;">v1.7</span></p>
+  <p>What's in the house, and when it runs out. <span class="mono" style="opacity:.55;">v1.9</span></p>
   <div class="toolbar">
     <input class="search" id="searchInput" placeholder="Search items…" autocomplete="off">
     <button class="icon-btn" id="sortBtn" title="Sort">⇅</button>
     <button class="icon-btn" id="themeBtn" title="Switch theme">☀</button>
     <button class="icon-btn" id="wasteHistoryBtn" title="Waste log">🗑</button>
+    <button class="icon-btn" id="activityBtn" title="Activity log">🕐</button>
     <button class="icon-btn" id="manageBtn" title="Manage categories, shops, locations">⚙</button>
   </div>
   <div class="filter-row" id="filterRow"></div>
@@ -382,10 +387,10 @@
 
     <div class="sheet-actions">
       <button class="primary-btn" id="saveItemBtn" style="margin-top:0;">Save</button>
-      <button class="secondary-btn" id="togglePauseBtn" style="display:none;">Pause</button>
-      <button class="waste-btn" id="wasteItemBtn" style="display:none;">Waste</button>
+      <button class="secondary-btn" id="togglePauseBtn" style="display:none;">Remove stock</button>
+      <button class="waste-btn" id="wasteItemBtn" style="display:none;">Throw out</button>
       <button class="secondary-btn" id="duplicateItemBtn" style="display:none;">Duplicate</button>
-      <button class="danger-btn" id="deleteItemBtn" style="display:none;">Delete</button>
+      <button class="danger-btn" id="deleteItemBtn" style="display:none;">Delete item</button>
     </div>
   </div>
 </div>
@@ -479,17 +484,21 @@
 <div class="overlay" id="logWasteOverlay">
   <div class="sheet">
     <div class="sheet-head">
-      <h2>Log waste</h2>
+      <h2 id="lwFormTitle">Log waste</h2>
       <button class="close-x" data-close="logWasteOverlay">✕</button>
     </div>
     <p class="helper" id="lwItemLabel" style="margin-top:0;"></p>
     <input type="hidden" id="lwItemId">
+    <input type="hidden" id="lwEntryId">
 
-    <label style="margin-top:0;">Quantity wasted</label>
-    <div style="display:flex;gap:10px;align-items:center;">
-      <input id="lwQty" type="number" inputmode="decimal" min="0" step="1" style="flex:1;">
-      <span class="mono" id="lwUnitLabel" style="color:var(--ink-soft);min-width:36px;"></span>
+    <label style="margin-top:0;">Quantity thrown out</label>
+    <div class="row2">
+      <input id="lwQty" type="number" inputmode="decimal" min="0" step="1">
+      <select id="lwUnit">
+        <option>pcs</option><option>kg</option><option>g</option><option>L</option><option>ml</option><option>pack</option>
+      </select>
     </div>
+    <p class="helper" style="margin-top:6px;">Unit defaults to the item's, but change it if you're logging in a different unit (e.g. tossing 2 pieces from a kg-tracked bag).</p>
 
     <label>Reason</label>
     <select id="lwReason"></select>
@@ -498,7 +507,13 @@
       <button type="button" data-addnew-field="wasteReasons" data-addnew-target="lwReason">Add</button>
     </div>
 
-    <button class="confirm-log-btn" id="logWasteConfirmBtn">Log waste</button>
+    <label>Date</label>
+    <input id="lwDate" type="date">
+
+    <div class="sheet-actions">
+      <button class="confirm-log-btn" id="logWasteConfirmBtn" style="margin-top:0;">Log waste</button>
+      <button class="danger-btn" id="deleteWasteBtn" style="display:none;">Delete entry</button>
+    </div>
   </div>
 </div>
 
@@ -511,6 +526,18 @@
     </div>
     <div id="wasteSummary" class="waste-summary"></div>
     <div id="wasteHistoryList"></div>
+  </div>
+</div>
+
+<!-- Activity Log Sheet -->
+<div class="overlay" id="activityOverlay">
+  <div class="sheet">
+    <div class="sheet-head">
+      <h2>Activity</h2>
+      <button class="close-x" data-close="activityOverlay">✕</button>
+    </div>
+    <p class="helper" style="margin-top:0;">The most recent 200 actions, newest first — who added, used, restocked, removed, or threw out what.</p>
+    <div id="activityList"></div>
   </div>
 </div>
 
@@ -631,6 +658,7 @@ let locations = [...DEFAULT_LOCATIONS];
 let wasteReasons = [...DEFAULT_WASTE_REASONS];
 let items = [];
 let wasteLog = [];
+let activityLog = [];
 let activeFilters = { category: null, shop: null };
 let sortMode = "expiry"; // expiry | name | runway
 let searchTerm = "";
@@ -664,6 +692,21 @@ function initData(){
     renderWasteHistory();
     renderManageSheet();
   }, err => showToast("Sync error: " + err.message));
+
+  db.collection('activity').orderBy('createdAt','desc').limit(200).onSnapshot(snap=>{
+    activityLog = snap.docs.map(d=>({id:d.id, ...d.data()}));
+    renderActivityList();
+  }, err => showToast("Sync error: " + err.message));
+}
+async function logActivity(type, message){
+  // Best-effort — a logging failure must never block or fail the primary action it describes.
+  try{
+    await db.collection('activity').add({
+      type, message,
+      userEmail: (auth.currentUser && auth.currentUser.email) || null,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+  }catch(err){ console.warn('activity log failed', err); }
 }
 async function seedDefaultsIfMissing(){
   const ref = db.collection('meta').doc('settings');
@@ -890,7 +933,7 @@ function renderItemCard(item){
   if(low) badges += `<span class="badge low">Low stock</span>`;
   const metaBits = [item.category, item.subcategory, item.shop, item.location].filter(Boolean);
   const rightControl = item.paused
-    ? `<button class="revive-btn" data-revive="${esc(item.id)}">↻ Revive</button>`
+    ? `<button class="revive-btn" data-revive="${esc(item.id)}">↻ Restock</button>`
     : `<div class="qty-ctrl">
         <button class="qty-btn" data-adj="${esc(item.id)}:-1">−</button>
         <span class="qty-val mono">${esc(item.quantity)}</span>
@@ -898,7 +941,7 @@ function renderItemCard(item){
       </div>`;
   return `
     <div class="swipe-wrap" data-swipe-id="${esc(item.id)}" data-paused="${item.paused?1:0}">
-      <div class="swipe-action">${item.paused ? 'Delete' : 'Pause'}</div>
+      <div class="swipe-action">${item.paused ? 'Delete item' : 'Remove stock'}</div>
       <div class="item ${item.paused?'muted':''}" data-id="${esc(item.id)}">
         <span class="dot" style="background:${color}"></span>
         <div class="item-main" data-open="${esc(item.id)}">
@@ -939,8 +982,9 @@ async function reviveItem(id){
     });
     const item = items.find(i=>i.id===id);
     openItemSheet(item ? {...item, paused:false} : null);
-    showToast("Revived — update the quantity and save");
-  }catch(err){ showToast("Couldn't revive: " + err.message); }
+    showToast("Restocked — update the quantity and save");
+    if(item) logActivity('restocked', `Restocked "${item.name}"`);
+  }catch(err){ showToast("Couldn't restock: " + err.message); }
 }
 
 /* ---------- swipe gestures: swipe left = pause (active list) or delete (paused list) ---------- */
@@ -1009,13 +1053,14 @@ async function swipePause(id){
       paused:true, quantity:0, expiryDate:null, boughtDate:null,
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     });
-    showUndoToast(`"${item.name}" paused`, async ()=>{
+    logActivity('stock_removed', `Removed stock for "${item.name}"`);
+    showUndoToast(`Stock removed for "${item.name}"`, async ()=>{
       await db.collection('items').doc(id).update({
         paused:false, quantity:prevQty, expiryDate:prevExpiry, boughtDate:prevBought,
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
       });
     });
-  }catch(err){ showToast("Couldn't pause: " + err.message); }
+  }catch(err){ showToast("Couldn't remove stock: " + err.message); }
 }
 async function swipeDelete(id){
   const item = items.find(i=>i.id===id);
@@ -1024,6 +1069,7 @@ async function swipeDelete(id){
   delete snapshot.id;
   try{
     await db.collection('items').doc(id).delete();
+    logActivity('deleted', `Deleted "${item.name}"`);
     showUndoToast(`"${item.name}" deleted`, async ()=>{
       snapshot.updatedAt = firebase.firestore.FieldValue.serverTimestamp();
       await db.collection('items').add(snapshot);
@@ -1047,7 +1093,7 @@ function openItemSheet(item){
   document.getElementById('fBought').value = item?.boughtDate || '';
   document.getElementById('fThreshold').value = item?.lowStockThreshold ?? '';
   currentItemPaused = !!item?.paused;
-  document.getElementById('togglePauseBtn').textContent = currentItemPaused ? 'Resume' : 'Pause';
+  document.getElementById('togglePauseBtn').textContent = currentItemPaused ? 'Restock' : 'Remove stock';
   document.getElementById('togglePauseBtn').style.display = item ? 'block' : 'none';
   document.getElementById('wasteItemBtn').style.display = item ? 'block' : 'none';
   document.getElementById('fNotes').value = item?.notes || '';
@@ -1083,44 +1129,86 @@ document.getElementById('wasteItemBtn').onclick = ()=>{
   history.replaceState({overlay:'logWasteOverlay'}, '');
 };
 function openLogWasteSheet(item){
+  document.getElementById('lwFormTitle').textContent = 'Log waste';
+  document.getElementById('lwEntryId').value = '';
   document.getElementById('lwItemId').value = item.id;
-  document.getElementById('lwItemLabel').textContent = `Wasting from: ${item.name}`;
-  const qtyInput = document.getElementById('lwQty');
-  qtyInput.value = item.quantity;
-  qtyInput.max = item.quantity;
-  document.getElementById('lwUnitLabel').textContent = item.unit || '';
+  document.getElementById('lwItemLabel').textContent = `Throwing out from: ${item.name}`;
+  document.getElementById('lwQty').value = item.quantity;
+  document.getElementById('lwUnit').value = item.unit || 'pcs';
   populateReasonSelect();
   document.getElementById('lwReason').value = wasteReasons[0];
   document.getElementById('lwReasonNewWrap').style.display = 'none';
+  document.getElementById('lwDate').value = todayStr();
+  document.getElementById('deleteWasteBtn').style.display = 'none';
+  document.getElementById('logWasteConfirmBtn').textContent = 'Log waste';
   document.getElementById('logWasteOverlay').classList.add('show');
 }
+function openEditWasteSheet(entry){
+  document.getElementById('wasteHistoryOverlay').classList.remove('show');
+  document.getElementById('lwFormTitle').textContent = 'Edit waste entry';
+  document.getElementById('lwEntryId').value = entry.id;
+  document.getElementById('lwItemId').value = entry.itemId || '';
+  document.getElementById('lwItemLabel').textContent = entry.name;
+  document.getElementById('lwQty').value = entry.quantity;
+  document.getElementById('lwUnit').value = entry.unit || 'pcs';
+  populateReasonSelect();
+  document.getElementById('lwReason').value = entry.reason || wasteReasons[0];
+  document.getElementById('lwReasonNewWrap').style.display = 'none';
+  document.getElementById('lwDate').value = entry.date || todayStr();
+  document.getElementById('deleteWasteBtn').style.display = 'block';
+  document.getElementById('logWasteConfirmBtn').textContent = 'Save changes';
+  document.getElementById('logWasteOverlay').classList.add('show');
+  history.replaceState({overlay:'logWasteOverlay'}, '');
+}
 document.getElementById('logWasteConfirmBtn').onclick = async ()=>{
+  const entryId = document.getElementById('lwEntryId').value;
+  let qty = Number(document.getElementById('lwQty').value);
+  if(!qty || qty <= 0){ showToast("Enter how much you're throwing out"); return; }
+  const wasteUnit = document.getElementById('lwUnit').value;
+  const reasonSel = document.getElementById('lwReason');
+  const reason = reasonSel.value === '__new__' ? wasteReasons[0] : reasonSel.value;
+  const date = document.getElementById('lwDate').value || todayStr();
+
+  if(entryId){
+    // Editing an existing entry only corrects the record — it never touches inventory.
+    try{
+      await db.collection('waste').doc(entryId).update({ quantity: qty, unit: wasteUnit, reason, date });
+      closeOverlay('logWasteOverlay');
+      showToast("Waste entry updated");
+    }catch(err){ showToast("Couldn't save: " + err.message); }
+    return;
+  }
+
   const itemId = document.getElementById('lwItemId').value;
   const item = items.find(i=>i.id===itemId);
   if(!item){ showToast("That item couldn't be found — it may have changed."); closeOverlay('logWasteOverlay'); return; }
-  let qty = Number(document.getElementById('lwQty').value);
-  if(!qty || qty <= 0){ showToast("Enter how much you're wasting"); return; }
-  if(qty > item.quantity) qty = item.quantity;
-  const reasonSel = document.getElementById('lwReason');
-  const reason = reasonSel.value === '__new__' ? wasteReasons[0] : reasonSel.value;
+
+  const unitsMatch = wasteUnit === (item.unit || '');
+  if(unitsMatch && qty > item.quantity) qty = item.quantity;
 
   try{
     await db.collection('waste').add({
       name: item.name,
       quantity: qty,
-      unit: item.unit || null,
+      unit: wasteUnit || null,
       category: item.category || null,
       reason,
       itemId: item.id,
-      date: todayStr(),
+      date,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
-    const remaining = Math.max(0, item.quantity - qty);
-    await db.collection('items').doc(item.id).update({
-      quantity: remaining, updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-    closeOverlay('logWasteOverlay');
-    showToast(`Logged ${qty} ${item.unit||''} of "${item.name}" as waste`);
+    if(unitsMatch){
+      const remaining = Math.max(0, item.quantity - qty);
+      await db.collection('items').doc(item.id).update({
+        quantity: remaining, updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      closeOverlay('logWasteOverlay');
+      showToast(`Threw out ${qty} ${wasteUnit} — inventory now ${remaining} ${wasteUnit}`);
+    } else {
+      closeOverlay('logWasteOverlay');
+      showToast(`Logged — unit "${wasteUnit}" doesn't match the item's "${item.unit||''}", so inventory wasn't changed.`, 4200);
+    }
+    logActivity('wasted', `Threw out ${qty} ${wasteUnit} of "${item.name}" (${reason})`);
   }catch(err){ showToast("Couldn't log waste: " + err.message); }
 };
 
@@ -1129,9 +1217,43 @@ document.getElementById('wasteHistoryBtn').onclick = ()=>{
   document.getElementById('wasteHistoryOverlay').classList.add('show');
   history.pushState({overlay:'wasteHistoryOverlay'}, '');
 };
+
+/* ---------- activity log view ---------- */
+document.getElementById('activityBtn').onclick = ()=>{
+  document.getElementById('activityOverlay').classList.add('show');
+  history.pushState({overlay:'activityOverlay'}, '');
+};
+function formatActivityTime(ts){
+  if(!ts || !ts.toDate) return 'just now';
+  const d = ts.toDate();
+  const now = new Date();
+  const time = d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+  if(d.toDateString() === now.toDateString()) return `Today, ${time}`;
+  const yest = new Date(now); yest.setDate(now.getDate()-1);
+  if(d.toDateString() === yest.toDateString()) return `Yesterday, ${time}`;
+  return d.toLocaleDateString([], {month:'short', day:'numeric'}) + ', ' + time;
+}
+function renderActivityEntry(entry){
+  const who = entry.userEmail ? esc(entry.userEmail.split('@')[0]) : 'Someone';
+  return `
+    <div class="activity-row">
+      <div class="item-name">${esc(entry.message)}</div>
+      <div class="item-meta"><span>${who}</span><span>${formatActivityTime(entry.createdAt)}</span></div>
+    </div>`;
+}
+function renderActivityList(){
+  const listEl = document.getElementById('activityList');
+  if(!listEl) return;
+  if(activityLog.length===0){
+    listEl.innerHTML = `<div class="empty"><h3>No activity yet</h3><p>Adding, using, restocking, or throwing out items will show up here.</p></div>`;
+    return;
+  }
+  listEl.innerHTML = activityLog.map(renderActivityEntry).join('');
+}
+
 function renderWasteEntry(entry){
   return `
-    <div class="waste-row">
+    <div class="waste-row" data-editwaste="${esc(entry.id)}">
       <div class="waste-row-main">
         <div class="item-name">${esc(entry.name)}</div>
         <div class="item-meta">
@@ -1140,7 +1262,6 @@ function renderWasteEntry(entry){
           <span>${esc(entry.date||'')}</span>
         </div>
       </div>
-      <button class="qty-btn" data-delwaste="${esc(entry.id)}" title="Remove this log entry">✕</button>
     </div>`;
 }
 function renderWasteHistory(){
@@ -1166,11 +1287,21 @@ function renderWasteHistory(){
   listEl.innerHTML = wasteLog.map(renderWasteEntry).join('');
 }
 document.getElementById('wasteHistoryList').addEventListener('click', e=>{
-  const id = e.target.closest('[data-delwaste]')?.dataset.delwaste;
+  const id = e.target.closest('[data-editwaste]')?.dataset.editwaste;
   if(!id) return;
-  if(!confirm("Remove this waste log entry? This only removes the record — it won't change any item's quantity.")) return;
-  db.collection('waste').doc(id).delete().catch(err=>showToast("Couldn't remove: " + err.message));
+  const entry = wasteLog.find(w=>w.id===id);
+  if(entry) openEditWasteSheet(entry);
 });
+document.getElementById('deleteWasteBtn').onclick = async ()=>{
+  const entryId = document.getElementById('lwEntryId').value;
+  if(!entryId) return;
+  if(!confirm("Delete this waste log entry? This only removes the record — it won't change any item's quantity.")) return;
+  try{
+    await db.collection('waste').doc(entryId).delete();
+    closeOverlay('logWasteOverlay');
+    showToast("Waste entry deleted");
+  }catch(err){ showToast("Couldn't delete: " + err.message); }
+};
 
 document.querySelectorAll('[data-close]').forEach(btn=>{
   btn.onclick = ()=> closeOverlay(btn.dataset.close);
@@ -1236,18 +1367,24 @@ async function saveItemFromForm(opts){
 }
 document.getElementById('saveItemBtn').onclick = async ()=>{
   const id = document.getElementById('editingId').value;
+  const name = document.getElementById('fName').value.trim();
+  const qty = document.getElementById('fQty').value;
+  const unit = document.getElementById('fUnit').value;
   const ok = await saveItemFromForm({});
   if(ok){
     closeOverlay('itemOverlay');
     showToast(id ? "Item updated" : "Item added");
+    logActivity(id ? 'edited' : 'created', id ? `Edited "${name}"` : `Added "${name}" (${qty} ${unit})`);
   }
 };
 document.getElementById('togglePauseBtn').onclick = async ()=>{
+  const name = document.getElementById('fName').value.trim();
   const newPaused = !currentItemPaused;
   const ok = await saveItemFromForm({paused:newPaused, clearStock:newPaused});
   if(ok){
     closeOverlay('itemOverlay');
-    showToast(newPaused ? "Paused — quantity and dates cleared" : "Resumed");
+    showToast(newPaused ? "Stock removed — quantity and dates cleared" : "Restocked");
+    logActivity(newPaused ? 'stock_removed' : 'restocked', newPaused ? `Removed stock for "${name}"` : `Restocked "${name}"`);
   }
 };
 function valOrDefault(id){
@@ -1257,16 +1394,20 @@ function valOrDefault(id){
 document.getElementById('deleteItemBtn').onclick = async ()=>{
   const id = document.getElementById('editingId').value;
   if(!id) return;
+  const name = document.getElementById('fName').value.trim();
   if(!confirm("Delete this item?")) return;
   await db.collection('items').doc(id).delete();
   closeOverlay('itemOverlay');
   showToast("Item deleted");
+  logActivity('deleted', `Deleted "${name}"`);
 };
 async function quickAdjust(id, delta){
   const item = items.find(i=>i.id===id);
   if(!item) return;
   const next = Math.max(0, (item.quantity||0) + delta);
   await db.collection('items').doc(id).update({quantity: next, updatedAt: firebase.firestore.FieldValue.serverTimestamp()});
+  const verb = delta > 0 ? 'Added' : 'Used';
+  logActivity(delta > 0 ? 'increase' : 'decrease', `${verb} ${Math.abs(delta)} ${item.unit||''} of "${item.name}"`);
 }
 
 /* ---------- search / sort / filter ---------- */
@@ -1368,10 +1509,10 @@ window.addEventListener('popstate', ()=>{
 
 let toastTimer;
 let toastUndoHandler = null;
-function showToast(msg){
-  showUndoToast(msg, null);
+function showToast(msg, ms){
+  showUndoToast(msg, null, ms);
 }
-function showUndoToast(msg, undoFn){
+function showUndoToast(msg, undoFn, ms){
   const t = document.getElementById('toast');
   document.getElementById('toastMsg').textContent = msg;
   const undoBtn = document.getElementById('toastUndo');
@@ -1379,7 +1520,8 @@ function showUndoToast(msg, undoFn){
   undoBtn.style.display = undoFn ? 'inline' : 'none';
   t.classList.add('show');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(()=>{ t.classList.remove('show'); toastUndoHandler = null; }, undoFn ? 4500 : 2200);
+  const duration = ms || (undoFn ? 4500 : 2200);
+  toastTimer = setTimeout(()=>{ t.classList.remove('show'); toastUndoHandler = null; }, duration);
 }
 document.getElementById('toastUndo').onclick = async ()=>{
   if(!toastUndoHandler) return;
@@ -1413,7 +1555,7 @@ themeBtn.onclick = ()=>{
 applyThemeButton();
 
 /* ---------- number fields: select existing value so typing replaces it ---------- */
-['fQty','fThreshold'].forEach(id=>{
+['fQty','fThreshold','lwQty'].forEach(id=>{
   document.getElementById(id).addEventListener('focus', e=> e.target.select());
 });
 
