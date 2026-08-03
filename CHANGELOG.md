@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.7
+- **New: waste tracking.** Open any item and tap **Waste** to log how much you're throwing out and why (Expired/spoiled, Made too much, Didn't like it, Bought too much, Other — customizable like categories). The item's quantity reduces automatically.
+- **New: Waste log** — a 🗑 icon in the header opens a running history of everything logged, with a quick monthly summary (count + most-wasted category). Individual entries can be removed if logged by mistake.
+- Waste reasons are manageable from ⚙ Manage Lists, same add/delete pattern as categories/shops/locations.
+- Internal: refactored the "add new value" system (categories/shops/locations/subcategories/waste reasons) onto one explicit, robust mechanism instead of fragile name-guessing — reduces the chance of ID-mismatch bugs like the one fixed in v1.6.
+- **Requires a Firestore rules update** — see setup notes (new `waste` collection + `wasteReasons` field).
+
+## v1.6.1
+- Pausing an item (via the Pause button or swipe) now clears its quantity to 0 and clears expiry/bought dates, but keeps the unit — so Revive naturally prompts for fresh numbers instead of showing stale ones. Undo restores the exact previous values.
+- Diagnosed the "missing or insufficient permission" error on adding a new location: it's a Firestore rules deployment gap, not an app bug — see chat for the fix.
+
 ## v1.6
 - Sticky footer buttons simplified to single words: Save, Pause/Resume, Duplicate, Delete.
 - Pause is now an immediate action from the edit sheet: tap it and the item saves, closes, and moves straight to the Paused section — no separate Save click needed.
