@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.9.1
+- Activity log now groups consecutive +/− taps on the same item, by the same person, within a 15-minute window into one line (e.g. "Used 4 pcs of X — 4 taps") instead of a separate line per tap. The underlying log still records every tap individually — this only changes how it's displayed.
+- **Requires a Firestore rules update** — see setup notes (activity entries now carry a few more optional fields).
+
 ## v1.9
 - **New: Activity log.** A 🕐 icon in the header shows the most recent 200 actions across both accounts — added, edited, used (+/− taps), restocked, stock removed, deleted, and thrown out — each with who did it and when.
 - Logging is best-effort: if it ever fails, it never blocks or breaks the actual action it's describing.

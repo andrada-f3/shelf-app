@@ -291,7 +291,7 @@
 <header>
   <span class="label-tag">Shared &amp; live</span>
   <h1>Shelf</h1>
-  <p>What's in the house, and when it runs out. <span class="mono" style="opacity:.55;">v1.9</span></p>
+  <p>What's in the house, and when it runs out. <span class="mono" style="opacity:.55;">v1.9.1</span></p>
   <div class="toolbar">
     <input class="search" id="searchInput" placeholder="Search items…" autocomplete="off">
     <button class="icon-btn" id="sortBtn" title="Sort">⇅</button>
@@ -698,14 +698,14 @@ function initData(){
     renderActivityList();
   }, err => showToast("Sync error: " + err.message));
 }
-async function logActivity(type, message){
+async function logActivity(type, message, extra){
   // Best-effort — a logging failure must never block or fail the primary action it describes.
   try{
-    await db.collection('activity').add({
+    await db.collection('activity').add(Object.assign({
       type, message,
       userEmail: (auth.currentUser && auth.currentUser.email) || null,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
+    }, extra || {}));
   }catch(err){ console.warn('activity log failed', err); }
 }
 async function seedDefaultsIfMissing(){
@@ -1233,11 +1233,38 @@ function formatActivityTime(ts){
   if(d.toDateString() === yest.toDateString()) return `Yesterday, ${time}`;
   return d.toLocaleDateString([], {month:'short', day:'numeric'}) + ', ' + time;
 }
+const ACTIVITY_GROUP_WINDOW_MS = 15 * 60 * 1000; // taps within 15 min of each other, same item/unit/person, merge into one line
+function withinGroupWindow(a, b){
+  if(!a.createdAt || !a.createdAt.toDate || !b.createdAt || !b.createdAt.toDate) return false;
+  return Math.abs(a.createdAt.toDate() - b.createdAt.toDate()) <= ACTIVITY_GROUP_WINDOW_MS;
+}
+function groupActivityLog(log){
+  const grouped = [];
+  for(const entry of log){
+    const isQty = entry.type === 'increase' || entry.type === 'decrease';
+    const last = grouped[grouped.length - 1];
+    if(isQty && last && last.type === entry.type && last.itemName === entry.itemName &&
+       last.unit === entry.unit && last.userEmail === entry.userEmail && withinGroupWindow(last, entry)){
+      last.quantity = (last.quantity || 0) + (entry.quantity || 0);
+      last.count = (last.count || 1) + 1;
+    } else {
+      grouped.push(Object.assign({}, entry, {count: 1}));
+    }
+  }
+  return grouped;
+}
 function renderActivityEntry(entry){
   const who = entry.userEmail ? esc(entry.userEmail.split('@')[0]) : 'Someone';
+  const isQty = entry.type === 'increase' || entry.type === 'decrease';
+  let msg = entry.message;
+  if(isQty && entry.itemName){
+    const verb = entry.type === 'increase' ? 'Added' : 'Used';
+    msg = `${verb} ${entry.quantity} ${entry.unit||''} of "${entry.itemName}"`.replace(/\s+/g,' ').trim();
+    if(entry.count > 1) msg += ` — ${entry.count} taps`;
+  }
   return `
     <div class="activity-row">
-      <div class="item-name">${esc(entry.message)}</div>
+      <div class="item-name">${esc(msg)}</div>
       <div class="item-meta"><span>${who}</span><span>${formatActivityTime(entry.createdAt)}</span></div>
     </div>`;
 }
@@ -1248,7 +1275,7 @@ function renderActivityList(){
     listEl.innerHTML = `<div class="empty"><h3>No activity yet</h3><p>Adding, using, restocking, or throwing out items will show up here.</p></div>`;
     return;
   }
-  listEl.innerHTML = activityLog.map(renderActivityEntry).join('');
+  listEl.innerHTML = groupActivityLog(activityLog).map(renderActivityEntry).join('');
 }
 
 function renderWasteEntry(entry){
@@ -1407,7 +1434,9 @@ async function quickAdjust(id, delta){
   const next = Math.max(0, (item.quantity||0) + delta);
   await db.collection('items').doc(id).update({quantity: next, updatedAt: firebase.firestore.FieldValue.serverTimestamp()});
   const verb = delta > 0 ? 'Added' : 'Used';
-  logActivity(delta > 0 ? 'increase' : 'decrease', `${verb} ${Math.abs(delta)} ${item.unit||''} of "${item.name}"`);
+  logActivity(delta > 0 ? 'increase' : 'decrease', `${verb} ${Math.abs(delta)} ${item.unit||''} of "${item.name}"`, {
+    itemName: item.name, quantity: Math.abs(delta), unit: item.unit || null
+  });
 }
 
 /* ---------- search / sort / filter ---------- */
