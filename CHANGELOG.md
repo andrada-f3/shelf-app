@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.10
+- Adding a new item with a name that already exists (active or paused) now warns you inline and asks to confirm before saving as a separate entry. Duplicating an item on purpose (for multi-batch/expiry tracking) is unaffected — no warning there.
+- Sign out moved out of Manage Lists into a small "Signed in as…" line under the header — tap it to sign out.
+- Sort is now a proper menu (tap ⇅) instead of cycling through taps, with new options: Category, Sub-category, Location, and Shop — each groups the list under section headers so same-group items sit together.
+- Export can now also filter by Sub-category (multi-select, like Category) and Location (single-select, like Shop).
+- No Firestore rules changes needed for this version.
+
 ## v1.9.1
 - Activity log now groups consecutive +/− taps on the same item, by the same person, within a 15-minute window into one line (e.g. "Used 4 pcs of X — 4 taps") instead of a separate line per tap. The underlying log still records every tap individually — this only changes how it's displayed.
 - **Requires a Firestore rules update** — see setup notes (activity entries now carry a few more optional fields).

@@ -70,6 +70,10 @@
   }
   header h1{font-size:26px;font-weight:800;margin-top:10px;letter-spacing:-.01em;}
   header p{margin:2px 0 0;color:var(--ink-soft);font-size:13px;}
+  .account-line{
+    margin:4px 0 0;font-size:12px;color:var(--ink-soft);cursor:pointer;
+    text-decoration:underline;text-decoration-style:dotted;text-underline-offset:2px;
+  }
 
   /* search + filter bar */
   .toolbar{display:flex;gap:8px;margin-top:14px;}
@@ -211,6 +215,12 @@
     background:var(--card);border:1px solid var(--line);border-radius:12px;
     padding:11px 13px;margin-bottom:7px;
   }
+  .sort-option{
+    background:var(--card);border:1px solid var(--line);border-radius:12px;
+    padding:13px 14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;
+    cursor:pointer;font-size:14px;font-weight:600;color:var(--ink);
+  }
+  .sort-option.active{border-color:var(--green);color:var(--green);}
   .confirm-log-btn{
     width:100%;background:var(--amber);color:#fff;border:none;border-radius:12px;padding:13px;
     font-family:'Archivo',sans-serif;font-weight:700;font-size:14px;margin-top:20px;cursor:pointer;
@@ -291,7 +301,8 @@
 <header>
   <span class="label-tag">Shared &amp; live</span>
   <h1>Shelf</h1>
-  <p>What's in the house, and when it runs out. <span class="mono" style="opacity:.55;">v1.9.1</span></p>
+  <p>What's in the house, and when it runs out. <span class="mono" style="opacity:.55;">v1.10</span></p>
+  <p class="account-line" id="accountLine" style="display:none;"></p>
   <div class="toolbar">
     <input class="search" id="searchInput" placeholder="Search items…" autocomplete="off">
     <button class="icon-btn" id="sortBtn" title="Sort">⇅</button>
@@ -326,6 +337,7 @@
 
     <label>Name</label>
     <input id="fName" placeholder="e.g. Oat milk">
+    <p class="helper" id="fNameWarning" style="display:none;color:var(--amber);"></p>
 
     <div class="row2">
       <div>
@@ -396,6 +408,17 @@
 </div>
 
 <!-- Export Sheet -->
+<!-- Sort Sheet -->
+<div class="overlay" id="sortOverlay">
+  <div class="sheet">
+    <div class="sheet-head">
+      <h2>Sort by</h2>
+      <button class="close-x" data-close="sortOverlay">✕</button>
+    </div>
+    <div id="sortOptionsList"></div>
+  </div>
+</div>
+
 <div class="overlay" id="exportOverlay">
   <div class="sheet">
     <div class="sheet-head">
@@ -409,8 +432,18 @@
     </div>
     <div class="export-cats" id="exportCats" style="margin-top:6px;"></div>
 
+    <label>Sub-categories to include</label>
+    <div class="export-cats" id="exportSubcatsQuick">
+      <span class="chip" data-exsubcat-all="1">All sub-categories</span>
+      <span class="chip" data-exsubcat-none="1">None</span>
+    </div>
+    <div class="export-cats" id="exportSubcats" style="margin-top:6px;"></div>
+
     <label>Shop</label>
     <div class="export-shops" id="exportShops"></div>
+
+    <label>Location</label>
+    <div class="export-shops" id="exportLocations"></div>
 
     <label>
       <input type="checkbox" id="exportLowOnly" style="width:auto;display:inline-block;vertical-align:middle;margin-right:6px;">
@@ -475,8 +508,6 @@
         <button type="button" data-manageadd="wasteReasons">Add</button>
       </div>
     </div>
-
-    <button class="danger-btn" id="signOutBtn" style="margin-top:24px;">Sign out</button>
   </div>
 </div>
 
@@ -601,13 +632,17 @@ if (CONFIG_IS_SET){
     currentUser = u;
     const gate = document.getElementById('signInGate');
     const root = document.getElementById('appRoot');
+    const accLine = document.getElementById('accountLine');
     if (u){
       gate.style.display = 'none';
       root.style.display = '';
+      accLine.textContent = `Signed in as ${u.email ? u.email.split('@')[0] : 'you'} — tap to sign out`;
+      accLine.style.display = 'block';
       initData();
     } else {
       gate.style.display = 'flex';
       root.style.display = 'none';
+      accLine.style.display = 'none';
     }
   });
 }
@@ -639,7 +674,7 @@ document.getElementById('signInBtn').onclick = async ()=>{
 document.getElementById('gatePassword').addEventListener('keydown', e=>{
   if(e.key === 'Enter') document.getElementById('signInBtn').click();
 });
-document.getElementById('signOutBtn').onclick = ()=>{
+document.getElementById('accountLine').onclick = ()=>{
   if(confirm("Sign out of Shelf on this device?")) auth.signOut();
 };
 
@@ -660,7 +695,16 @@ let items = [];
 let wasteLog = [];
 let activityLog = [];
 let activeFilters = { category: null, shop: null };
-let sortMode = "expiry"; // expiry | name | runway
+let sortMode = "expiry"; // expiry | name | runway | category | subcategory | location | shop
+const SORT_OPTIONS = [
+  {id:'expiry', label:'Expiry date (soonest first)'},
+  {id:'name', label:'Name (A–Z)'},
+  {id:'runway', label:'Closest to running out'},
+  {id:'category', label:'Category (grouped)'},
+  {id:'subcategory', label:'Sub-category (grouped)'},
+  {id:'location', label:'Location (grouped)'},
+  {id:'shop', label:'Shop (grouped)'}
+];
 let searchTerm = "";
 
 /* ---------- data init & sync ---------- */
@@ -825,12 +869,43 @@ function renderExportFilters(){
   catWrap.innerHTML = categories.filter(c=>items.some(i=>i.category===c)).map(c=>
     `<span class="chip ${exportState.cats.has(c)?'on':''}" data-excat="${esc(c)}">${esc(c)}</span>`
   ).join('');
+
+  const subcatWrap = document.getElementById('exportSubcats');
+  const presentSubcats = subcategories.filter(s=>items.some(i=>i.subcategory===s));
+  let subcatHtml = presentSubcats.map(s=>
+    `<span class="chip ${exportState.subcats && exportState.subcats.has(s)?'on':''}" data-exsubcat="${esc(s)}">${esc(s)}</span>`
+  ).join('');
+  if(items.some(i=>!i.subcategory)){
+    subcatHtml += `<span class="chip ${exportState.subcats && exportState.subcats.has('__none__')?'on':''}" data-exsubcat="__none__">No sub-category</span>`;
+  }
+  subcatWrap.innerHTML = subcatHtml;
+
   const shopWrap = document.getElementById('exportShops');
   shopWrap.innerHTML = `<span class="chip ${exportState.shop===null?'on':''}" data-exshop="">All shops</span>` +
     shops.filter(s=>items.some(i=>i.shop===s)).map(s=>
       `<span class="chip ${exportState.shop===s?'on':''}" data-exshop="${esc(s)}">${esc(s)}</span>`
     ).join('');
+
+  const locWrap = document.getElementById('exportLocations');
+  locWrap.innerHTML = `<span class="chip ${exportState.location===null?'on':''}" data-exlocation="">All locations</span>` +
+    locations.filter(l=>items.some(i=>i.location===l)).map(l=>
+      `<span class="chip ${exportState.location===l?'on':''}" data-exlocation="${esc(l)}">${esc(l)}</span>`
+    ).join('');
 }
+function renderSortOptions(){
+  const root = document.getElementById('sortOptionsList');
+  root.innerHTML = SORT_OPTIONS.map(o=>`
+    <div class="sort-option ${sortMode===o.id?'active':''}" data-sortoption="${o.id}">
+      <span>${esc(o.label)}</span>${sortMode===o.id ? '<span>✓</span>' : ''}
+    </div>`).join('');
+}
+document.getElementById('sortOptionsList').addEventListener('click', e=>{
+  const opt = e.target.closest('[data-sortoption]')?.dataset.sortoption;
+  if(!opt) return;
+  sortMode = opt;
+  renderList();
+  closeOverlay('sortOverlay');
+});
 function renderManageSheet(){
   renderManageGroup('manageCats', categories, 'categories');
   renderManageGroup('manageSubcats', subcategories, 'subcategories');
@@ -875,6 +950,7 @@ document.querySelectorAll('[data-manageadd]').forEach(btn=>{
   };
 });
 
+const GROUPING_FIELDS = {category:'category', subcategory:'subcategory', location:'location', shop:'shop'};
 function renderList(){
   const root = document.getElementById('listRoot');
   let filtered = items.filter(i=>{
@@ -885,6 +961,7 @@ function renderList(){
   let list = filtered.filter(i=>!i.paused);
   const pausedList = filtered.filter(i=>i.paused).sort((a,b)=>a.name.localeCompare(b.name));
 
+  const groupField = GROUPING_FIELDS[sortMode];
   if(sortMode === 'name'){
     list.sort((a,b)=>a.name.localeCompare(b.name));
   } else if(sortMode === 'runway'){
@@ -899,6 +976,15 @@ function renderList(){
       // neither has a threshold set — no runway to compute, fall back to raw quantity then name
       if(a.quantity !== b.quantity) return a.quantity - b.quantity;
       return a.name.localeCompare(b.name);
+    });
+  } else if(groupField){
+    list.sort((a,b)=>{
+      const av = a[groupField] || '';
+      const bv = b[groupField] || '';
+      if(av === bv) return a.name.localeCompare(b.name);
+      if(!av) return 1;
+      if(!bv) return -1;
+      return av.localeCompare(bv);
     });
   } else {
     list.sort((a,b)=>{
@@ -916,7 +1002,20 @@ function renderList(){
     return;
   }
 
-  let html = list.map(renderItemCard).join('');
+  let html = '';
+  if(groupField){
+    let lastGroup;
+    list.forEach(item=>{
+      const groupVal = item[groupField] || 'Unspecified';
+      if(groupVal !== lastGroup){
+        html += `<div class="section-label">${esc(groupVal)}</div>`;
+        lastGroup = groupVal;
+      }
+      html += renderItemCard(item);
+    });
+  } else {
+    html = list.map(renderItemCard).join('');
+  }
   if(pausedList.length>0){
     html += `<div class="section-label">Paused — not restocking</div>` + pausedList.map(renderItemCard).join('');
   }
@@ -1078,10 +1177,18 @@ async function swipeDelete(id){
 }
 
 let currentItemPaused = false;
+let isDuplicateFlow = false;
+function findDuplicateItem(name, excludeId){
+  const norm = name.trim().toLowerCase();
+  if(!norm) return null;
+  return items.find(i => i.id !== excludeId && i.name.trim().toLowerCase() === norm);
+}
 function openItemSheet(item){
+  isDuplicateFlow = false;
   document.getElementById('itemFormTitle').textContent = item ? 'Edit item' : 'Add item';
   document.getElementById('editingId').value = item ? item.id : '';
   document.getElementById('fName').value = item?.name || '';
+  document.getElementById('fNameWarning').style.display = 'none';
   document.getElementById('fQty').value = item?.quantity ?? 1;
   document.getElementById('fUnit').value = item?.unit || 'pcs';
   populateSelects();
@@ -1103,9 +1210,24 @@ function openItemSheet(item){
   document.getElementById('itemOverlay').classList.add('show');
   history.pushState({overlay:'itemOverlay'}, '');
 }
+document.getElementById('fName').addEventListener('input', ()=>{
+  const warnEl = document.getElementById('fNameWarning');
+  if(isDuplicateFlow){ warnEl.style.display = 'none'; return; }
+  const id = document.getElementById('editingId').value;
+  const name = document.getElementById('fName').value;
+  const dup = findDuplicateItem(name, id);
+  if(dup){
+    warnEl.textContent = `"${dup.name}" already exists${dup.paused ? ' (in Paused)' : ''} — you can still add this as a separate entry.`;
+    warnEl.style.display = 'block';
+  } else {
+    warnEl.style.display = 'none';
+  }
+});
 document.getElementById('duplicateItemBtn').onclick = ()=>{
+  isDuplicateFlow = true;
   document.getElementById('editingId').value = '';
   document.getElementById('itemFormTitle').textContent = 'Add item (copy)';
+  document.getElementById('fNameWarning').style.display = 'none';
   document.getElementById('deleteItemBtn').style.display = 'none';
   document.getElementById('duplicateItemBtn').style.display = 'none';
   document.getElementById('togglePauseBtn').style.display = 'none';
@@ -1397,6 +1519,13 @@ document.getElementById('saveItemBtn').onclick = async ()=>{
   const name = document.getElementById('fName').value.trim();
   const qty = document.getElementById('fQty').value;
   const unit = document.getElementById('fUnit').value;
+  if(!id && !isDuplicateFlow){
+    const dup = findDuplicateItem(name, id);
+    if(dup){
+      const proceed = confirm(`"${dup.name}" already exists${dup.paused ? ' (in Paused)' : ''}. Add "${name}" as a separate entry anyway?`);
+      if(!proceed) return;
+    }
+  }
   const ok = await saveItemFromForm({});
   if(ok){
     closeOverlay('itemOverlay');
@@ -1444,9 +1573,9 @@ document.getElementById('searchInput').addEventListener('input', e=>{
   searchTerm = e.target.value; renderList();
 });
 document.getElementById('sortBtn').addEventListener('click', ()=>{
-  sortMode = sortMode === 'expiry' ? 'name' : sortMode === 'name' ? 'runway' : 'expiry';
-  showToast("Sorted by " + (sortMode==='expiry'?'expiry date':sortMode==='name'?'name':'closest to running out'));
-  renderList();
+  renderSortOptions();
+  document.getElementById('sortOverlay').classList.add('show');
+  history.pushState({overlay:'sortOverlay'}, '');
 });
 document.getElementById('filterRow').addEventListener('click', e=>{
   const cat = e.target.closest('[data-filter-cat]')?.dataset.filterCat;
@@ -1456,8 +1585,14 @@ document.getElementById('filterRow').addEventListener('click', e=>{
 });
 
 /* ---------- export ---------- */
-let exportState = { cats: new Set(['Food']), shop: null, lowOnly:false };
+let exportState = { cats: new Set(['Food']), subcats: null, shop: null, location: null, lowOnly:false };
+function allSubcatsSelected(){
+  const present = new Set(items.map(i=>i.subcategory).filter(Boolean));
+  if(items.some(i=>!i.subcategory)) present.add('__none__');
+  return present;
+}
 document.getElementById('exportFab').onclick = ()=>{
+  if(exportState.subcats === null) exportState.subcats = allSubcatsSelected();
   renderExportFilters();
   buildExportText();
   document.getElementById('exportOverlay').classList.add('show');
@@ -1477,10 +1612,30 @@ document.getElementById('exportCatsQuick').addEventListener('click', e=>{
   } else return;
   renderExportFilters(); buildExportText();
 });
+document.getElementById('exportSubcats').addEventListener('click', e=>{
+  const s = e.target.closest('[data-exsubcat]')?.dataset.exsubcat;
+  if(s===undefined) return;
+  if(exportState.subcats.has(s)) exportState.subcats.delete(s); else exportState.subcats.add(s);
+  renderExportFilters(); buildExportText();
+});
+document.getElementById('exportSubcatsQuick').addEventListener('click', e=>{
+  if(e.target.closest('[data-exsubcat-all]')){
+    exportState.subcats = allSubcatsSelected();
+  } else if(e.target.closest('[data-exsubcat-none]')){
+    exportState.subcats = new Set();
+  } else return;
+  renderExportFilters(); buildExportText();
+});
 document.getElementById('exportShops').addEventListener('click', e=>{
   const s = e.target.closest('[data-exshop]')?.dataset.exshop;
   if(s===undefined) return;
   exportState.shop = s === '' ? null : s;
+  renderExportFilters(); buildExportText();
+});
+document.getElementById('exportLocations').addEventListener('click', e=>{
+  const l = e.target.closest('[data-exlocation]')?.dataset.exlocation;
+  if(l===undefined) return;
+  exportState.location = l === '' ? null : l;
   renderExportFilters(); buildExportText();
 });
 document.getElementById('exportLowOnly').addEventListener('change', e=>{
@@ -1489,7 +1644,12 @@ document.getElementById('exportLowOnly').addEventListener('change', e=>{
 function buildExportText(){
   let list = items.filter(i=>{
     if(!exportState.cats.has(i.category)) return false;
+    if(exportState.subcats){
+      const key = i.subcategory || '__none__';
+      if(!exportState.subcats.has(key)) return false;
+    }
     if(exportState.shop && i.shop !== exportState.shop) return false;
+    if(exportState.location && i.location !== exportState.location) return false;
     if(exportState.lowOnly){
       const fresh = freshnessStatus(i);
       const low = lowStockStatus(i);
