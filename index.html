@@ -70,15 +70,12 @@
   }
   header h1{font-size:26px;font-weight:800;margin-top:10px;letter-spacing:-.01em;}
   header p{margin:2px 0 0;color:var(--ink-soft);font-size:13px;}
-  .account-line{
-    margin:4px 0 0;font-size:12px;color:var(--ink-soft);cursor:pointer;
-    text-decoration:underline;text-decoration-style:dotted;text-underline-offset:2px;
-  }
 
   /* search + filter bar */
-  .toolbar{display:flex;gap:8px;margin-top:14px;}
+  .toolbar{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;}
+  .search-row{margin-top:10px;}
   .search{
-    flex:1;background:var(--card);border:1px solid var(--line);border-radius:10px;
+    width:100%;background:var(--card);border:1px solid var(--line);border-radius:10px;
     padding:10px 12px;font-size:14px;font-family:'Inter',sans-serif;color:var(--ink);
   }
   .search:focus{outline:2px solid var(--green);outline-offset:-1px;}
@@ -210,6 +207,7 @@
     padding:12px 13px;margin-bottom:8px;display:flex;gap:11px;align-items:center;
   }
   .waste-row-main{flex:1;min-width:0;}
+  .stray-row-actions{display:flex;gap:6px;flex:0 0 auto;}
   .badge.waste-reason{background:var(--line);color:var(--ink-soft);}
   .activity-row{
     background:var(--card);border:1px solid var(--line);border-radius:12px;
@@ -301,15 +299,18 @@
 <header>
   <span class="label-tag">Shared &amp; live</span>
   <h1>Shelf</h1>
-  <p>What's in the house, and when it runs out. <span class="mono" style="opacity:.55;">v1.10</span></p>
-  <p class="account-line" id="accountLine" style="display:none;"></p>
+  <p>What's in the house, and when it runs out. <span class="mono" style="opacity:.55;">v1.11</span></p>
   <div class="toolbar">
-    <input class="search" id="searchInput" placeholder="Search items…" autocomplete="off">
+    <button class="icon-btn" id="searchBtn" title="Search">🔍</button>
     <button class="icon-btn" id="sortBtn" title="Sort">⇅</button>
     <button class="icon-btn" id="themeBtn" title="Switch theme">☀</button>
     <button class="icon-btn" id="wasteHistoryBtn" title="Waste log">🗑</button>
     <button class="icon-btn" id="activityBtn" title="Activity log">🕐</button>
+    <button class="icon-btn" id="accountBtn" title="Account / sign out">👤</button>
     <button class="icon-btn" id="manageBtn" title="Manage categories, shops, locations">⚙</button>
+  </div>
+  <div class="search-row" id="searchRow" style="display:none;">
+    <input class="search" id="searchInput" placeholder="Search items…" autocomplete="off">
   </div>
   <div class="filter-row" id="filterRow"></div>
 </header>
@@ -463,6 +464,12 @@
       <button class="close-x" data-close="manageOverlay">✕</button>
     </div>
     <p class="helper" style="margin-top:0;">Tap the ✕ on a tag to remove it. If items are using it, you'll be asked to confirm — deleting clears that field on those items. Each list needs at least one option.</p>
+
+    <div class="manage-section" id="strayValuesSection" style="display:none;">
+      <label style="margin-top:0;">Stray values found</label>
+      <p class="helper" style="margin-top:0;">Set on some items or waste entries but not in any list below — usually left over from before a value was deleted. Add it back, or clear it from what's using it.</p>
+      <div id="strayValuesList"></div>
+    </div>
 
     <div class="manage-section">
       <label style="margin-top:0;">Categories</label>
@@ -632,17 +639,13 @@ if (CONFIG_IS_SET){
     currentUser = u;
     const gate = document.getElementById('signInGate');
     const root = document.getElementById('appRoot');
-    const accLine = document.getElementById('accountLine');
     if (u){
       gate.style.display = 'none';
       root.style.display = '';
-      accLine.textContent = `Signed in as ${u.email ? u.email.split('@')[0] : 'you'} — tap to sign out`;
-      accLine.style.display = 'block';
       initData();
     } else {
       gate.style.display = 'flex';
       root.style.display = 'none';
-      accLine.style.display = 'none';
     }
   });
 }
@@ -674,7 +677,7 @@ document.getElementById('signInBtn').onclick = async ()=>{
 document.getElementById('gatePassword').addEventListener('keydown', e=>{
   if(e.key === 'Enter') document.getElementById('signInBtn').click();
 });
-document.getElementById('accountLine').onclick = ()=>{
+document.getElementById('accountBtn').onclick = ()=>{
   if(confirm("Sign out of Shelf on this device?")) auth.signOut();
 };
 
@@ -866,29 +869,26 @@ function renderFilterRow(){
 }
 function renderExportFilters(){
   const catWrap = document.getElementById('exportCats');
-  catWrap.innerHTML = categories.filter(c=>items.some(i=>i.category===c)).map(c=>
+  catWrap.innerHTML = categories.map(c=>
     `<span class="chip ${exportState.cats.has(c)?'on':''}" data-excat="${esc(c)}">${esc(c)}</span>`
   ).join('');
 
   const subcatWrap = document.getElementById('exportSubcats');
-  const presentSubcats = subcategories.filter(s=>items.some(i=>i.subcategory===s));
-  let subcatHtml = presentSubcats.map(s=>
+  let subcatHtml = subcategories.map(s=>
     `<span class="chip ${exportState.subcats && exportState.subcats.has(s)?'on':''}" data-exsubcat="${esc(s)}">${esc(s)}</span>`
   ).join('');
-  if(items.some(i=>!i.subcategory)){
-    subcatHtml += `<span class="chip ${exportState.subcats && exportState.subcats.has('__none__')?'on':''}" data-exsubcat="__none__">No sub-category</span>`;
-  }
+  subcatHtml += `<span class="chip ${exportState.subcats && exportState.subcats.has('__none__')?'on':''}" data-exsubcat="__none__">No sub-category</span>`;
   subcatWrap.innerHTML = subcatHtml;
 
   const shopWrap = document.getElementById('exportShops');
   shopWrap.innerHTML = `<span class="chip ${exportState.shop===null?'on':''}" data-exshop="">All shops</span>` +
-    shops.filter(s=>items.some(i=>i.shop===s)).map(s=>
+    shops.map(s=>
       `<span class="chip ${exportState.shop===s?'on':''}" data-exshop="${esc(s)}">${esc(s)}</span>`
     ).join('');
 
   const locWrap = document.getElementById('exportLocations');
   locWrap.innerHTML = `<span class="chip ${exportState.location===null?'on':''}" data-exlocation="">All locations</span>` +
-    locations.filter(l=>items.some(i=>i.location===l)).map(l=>
+    locations.map(l=>
       `<span class="chip ${exportState.location===l?'on':''}" data-exlocation="${esc(l)}">${esc(l)}</span>`
     ).join('');
 }
@@ -906,12 +906,79 @@ document.getElementById('sortOptionsList').addEventListener('click', e=>{
   renderList();
   closeOverlay('sortOverlay');
 });
+const FIELD_LABEL = {categories:'Category', subcategories:'Sub-category', shops:'Shop', locations:'Location', wasteReasons:'Waste reason'};
+function findOrphanedValues(field){
+  const fieldSingular = FIELD_SINGULAR[field];
+  const current = new Set(localArrayFor(field));
+  const sourceArray = field === 'wasteReasons' ? wasteLog : items;
+  const found = new Set();
+  sourceArray.forEach(i=>{
+    const v = i[fieldSingular];
+    if(v && !current.has(v)) found.add(v);
+  });
+  return [...found];
+}
+function computeStrayValues(){
+  const results = [];
+  ['categories','subcategories','shops','locations','wasteReasons'].forEach(field=>{
+    findOrphanedValues(field).forEach(v=>results.push({field, value:v}));
+  });
+  return results;
+}
+function renderStrayValues(){
+  const strays = computeStrayValues();
+  const section = document.getElementById('strayValuesSection');
+  const list = document.getElementById('strayValuesList');
+  if(strays.length===0){ section.style.display='none'; return; }
+  section.style.display = 'block';
+  list.innerHTML = strays.map(s=>`
+    <div class="waste-row" style="cursor:default;">
+      <div class="waste-row-main">
+        <div class="item-name">${esc(s.value)}</div>
+        <div class="item-meta"><span>${esc(FIELD_LABEL[s.field])}</span></div>
+      </div>
+      <div class="stray-row-actions">
+        <button class="qty-btn" data-strayadd-field="${esc(s.field)}" data-strayadd-value="${esc(s.value)}" title="Add back to list">+</button>
+        <button class="qty-btn" data-strayclear-field="${esc(s.field)}" data-strayclear-value="${esc(s.value)}" title="Clear from items">✕</button>
+      </div>
+    </div>`).join('');
+}
+document.getElementById('strayValuesList').addEventListener('click', async e=>{
+  const addBtn = e.target.closest('[data-strayadd-field]');
+  const clearBtn = e.target.closest('[data-strayclear-field]');
+  if(addBtn){
+    const field = addBtn.dataset.strayaddField, value = addBtn.dataset.strayaddValue;
+    const arr = localArrayFor(field);
+    if(arr && !arr.includes(value)) arr.push(value);
+    renderManageSheet();
+    if(field === 'wasteReasons'){ populateReasonSelect(); } else { populateSelects(); }
+    try{ await addListValue(field, value); }
+    catch(err){ showToast("Couldn't save: " + err.message); }
+  } else if(clearBtn){
+    const field = clearBtn.dataset.strayclearField, value = clearBtn.dataset.strayclearValue;
+    const fieldSingular = FIELD_SINGULAR[field];
+    const isWasteField = field === 'wasteReasons';
+    const sourceCollection = isWasteField ? 'waste' : 'items';
+    const sourceArray = isWasteField ? wasteLog : items;
+    const affected = sourceArray.filter(i=>i[fieldSingular]===value);
+    if(!confirm(`Clear "${value}" from ${affected.length} ${affected.length===1?'entry':'entries'}?`)) return;
+    const batch = db.batch();
+    affected.forEach(i=>{
+      const patch = {[fieldSingular]: null};
+      if(!isWasteField) patch.updatedAt = firebase.firestore.FieldValue.serverTimestamp();
+      batch.update(db.collection(sourceCollection).doc(i.id), patch);
+    });
+    try{ await batch.commit(); showToast(`Cleared "${value}"`); }
+    catch(err){ showToast("Couldn't clear: " + err.message); }
+  }
+});
 function renderManageSheet(){
   renderManageGroup('manageCats', categories, 'categories');
   renderManageGroup('manageSubcats', subcategories, 'subcategories');
   renderManageGroup('manageShops', shops, 'shops');
   renderManageGroup('manageLocations', locations, 'locations');
   renderManageGroup('manageReasons', wasteReasons, 'wasteReasons');
+  renderStrayValues();
 }
 function renderManageGroup(rootId, list, field){
   const root = document.getElementById(rootId);
@@ -1572,6 +1639,20 @@ async function quickAdjust(id, delta){
 document.getElementById('searchInput').addEventListener('input', e=>{
   searchTerm = e.target.value; renderList();
 });
+document.getElementById('searchBtn').onclick = ()=>{
+  const row = document.getElementById('searchRow');
+  const isOpen = row.style.display !== 'none';
+  if(isOpen){
+    row.style.display = 'none';
+    document.getElementById('searchInput').value = '';
+    searchTerm = '';
+    renderList();
+  } else {
+    row.style.display = 'block';
+    document.getElementById('searchInput').focus();
+  }
+  document.getElementById('searchBtn').classList.toggle('active', !isOpen);
+};
 document.getElementById('sortBtn').addEventListener('click', ()=>{
   renderSortOptions();
   document.getElementById('sortOverlay').classList.add('show');
@@ -1587,8 +1668,8 @@ document.getElementById('filterRow').addEventListener('click', e=>{
 /* ---------- export ---------- */
 let exportState = { cats: new Set(['Food']), subcats: null, shop: null, location: null, lowOnly:false };
 function allSubcatsSelected(){
-  const present = new Set(items.map(i=>i.subcategory).filter(Boolean));
-  if(items.some(i=>!i.subcategory)) present.add('__none__');
+  const present = new Set(subcategories);
+  present.add('__none__');
   return present;
 }
 document.getElementById('exportFab').onclick = ()=>{
@@ -1606,7 +1687,7 @@ document.getElementById('exportCats').addEventListener('click', e=>{
 });
 document.getElementById('exportCatsQuick').addEventListener('click', e=>{
   if(e.target.closest('[data-excat-all]')){
-    exportState.cats = new Set(categories.filter(c=>items.some(i=>i.category===c)));
+    exportState.cats = new Set(categories);
   } else if(e.target.closest('[data-excat-none]')){
     exportState.cats = new Set();
   } else return;

@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.11
+- Header decluttered: search is now an icon (🔍) that reveals the search field on tap instead of always taking up space, and account/sign-out moved to its own icon (👤) next to sort/theme/etc. — no more "Signed in as…" line permanently growing the header.
+- Manage Lists now detects "stray" values — things like a deleted location that's still stuck on some items because it was deleted before this cleanup existed. Each one shows which items/entries use it, with one-tap options to add it back to the list or clear it from everything using it.
+- **Export filters fixed**: Sub-category chips weren't showing at all if no item had one assigned yet (a real bug — only "in use" values were listed, and subcategory is optional so that was almost always empty). Category/Shop/Location/Sub-category filters now always show the full defined list, not just values currently in use.
+- **Loosened Firestore validation rules** to stop a recurring class of bug: every time a new field was added to the app's data (subcategory, waste reasons, activity fields, etc.), old rules would silently reject *all* writes to that collection — including totally unrelated ones — until rules were republished, while the app's offline cache made it look like it saved anyway. Rules no longer restrict the exact set of fields a document may have, only the type/size of fields when present. This means future updates are far less likely to need a rules change at all. **Requires one more rules update now** — see setup notes.
+
 ## v1.10
 - Adding a new item with a name that already exists (active or paused) now warns you inline and asks to confirm before saving as a separate entry. Duplicating an item on purpose (for multi-batch/expiry tracking) is unaffected — no warning there.
 - Sign out moved out of Manage Lists into a small "Signed in as…" line under the header — tap it to sign out.
