@@ -11,7 +11,6 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
 <script>
-  /* Applied before first paint so there's no flash of the wrong theme. */
   (function(){
     try{
       var t = localStorage.getItem('shelf-theme');
@@ -21,104 +20,51 @@
 </script>
 <style>
   :root{
-    /* dark theme — default */
-    --paper:#1D1E19;
-    --card:#262822;
-    --ink:#EDEBE0;
-    --ink-soft:#9C9A8C;
-    --line:#3A3C33;
-    --green:#5AAE81;
-    --green-bg:#233329;
-    --amber:#E0A155;
-    --amber-bg:#3A2C18;
-    --red:#E28A7D;
-    --red-bg:#3A211D;
-    --input-bg:#2A2C25;
+    --paper:#1D1E19; --card:#262822; --ink:#EDEBE0; --ink-soft:#9C9A8C; --line:#3A3C33;
+    --green:#5AAE81; --green-bg:#233329; --amber:#E0A155; --amber-bg:#3A2C18;
+    --red:#E28A7D; --red-bg:#3A211D; --input-bg:#2A2C25;
   }
   :root[data-theme="light"]{
-    --paper:#F0F2EA;
-    --card:#FBFAF5;
-    --ink:#2B2A26;
-    --ink-soft:#6B6A60;
-    --line:#DAD6C6;
-    --green:#2F6B4F;
-    --green-bg:#E3EDE6;
-    --amber:#B8752A;
-    --amber-bg:#F3E7D4;
-    --red:#A63D33;
-    --red-bg:#F3DEDB;
-    --input-bg:#FFFFFF;
+    --paper:#F0F2EA; --card:#FBFAF5; --ink:#2B2A26; --ink-soft:#6B6A60; --line:#DAD6C6;
+    --green:#2F6B4F; --green-bg:#E3EDE6; --amber:#B8752A; --amber-bg:#F3E7D4;
+    --red:#A63D33; --red-bg:#F3DEDB; --input-bg:#FFFFFF;
   }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;background:var(--paper);color:var(--ink);font-family:'Inter',sans-serif;-webkit-tap-highlight-color:transparent;}
-  body{padding-bottom:88px;}
+  body{padding-bottom:110px;}
   h1,h2,h3{font-family:'Archivo',sans-serif;margin:0;}
   .mono{font-family:'IBM Plex Mono',monospace;}
 
-  /* header */
-  header{
-    padding:22px 18px 16px;
-    background:var(--paper);
-    position:sticky;top:0;z-index:10;
-    border-bottom:1px solid var(--line);
-  }
-  .label-tag{
-    display:inline-flex;align-items:center;gap:6px;
-    background:var(--ink);color:var(--paper);
-    font-family:'Archivo',sans-serif;font-weight:800;font-size:12px;letter-spacing:.14em;
-    padding:5px 10px 4px;border-radius:3px;text-transform:uppercase;
-  }
+  header{padding:22px 18px 16px;background:var(--paper);position:sticky;top:0;z-index:10;border-bottom:1px solid var(--line);}
+  .label-tag{display:inline-flex;align-items:center;gap:6px;background:var(--ink);color:var(--paper);font-family:'Archivo',sans-serif;font-weight:800;font-size:12px;letter-spacing:.14em;padding:5px 10px 4px;border-radius:3px;text-transform:uppercase;}
   header h1{font-size:26px;font-weight:800;margin-top:10px;letter-spacing:-.01em;}
   header p{margin:2px 0 0;color:var(--ink-soft);font-size:13px;}
 
-  /* search + filter bar */
   .toolbar{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;}
   .search-row{margin-top:10px;}
-  .search{
-    width:100%;background:var(--card);border:1px solid var(--line);border-radius:10px;
-    padding:10px 12px;font-size:14px;font-family:'Inter',sans-serif;color:var(--ink);
-  }
+  .search{width:100%;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:14px;font-family:'Inter',sans-serif;color:var(--ink);}
   .search:focus{outline:2px solid var(--green);outline-offset:-1px;}
-  .icon-btn{
-    background:var(--card);border:1px solid var(--line);border-radius:10px;
-    width:42px;height:42px;display:flex;align-items:center;justify-content:center;
-    font-size:17px;cursor:pointer;color:var(--ink);
-  }
+  .icon-btn{background:var(--card);border:1px solid var(--line);border-radius:10px;width:42px;height:42px;display:flex;align-items:center;justify-content:center;font-size:17px;cursor:pointer;color:var(--ink);}
   .icon-btn.active{background:var(--green);border-color:var(--green);color:#fff;}
 
   .filter-row{display:flex;gap:7px;overflow-x:auto;margin-top:10px;padding-bottom:2px;}
   .filter-row::-webkit-scrollbar{display:none;}
-  .chip{
-    flex:0 0 auto;font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;
-    padding:6px 11px;border-radius:20px;border:1px solid var(--line);background:var(--card);
-    color:var(--ink-soft);cursor:pointer;white-space:nowrap;
-  }
+  .chip{flex:0 0 auto;font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;padding:6px 11px;border-radius:20px;border:1px solid var(--line);background:var(--card);color:var(--ink-soft);cursor:pointer;white-space:nowrap;}
   .chip.on{background:var(--ink);color:var(--paper);border-color:var(--ink);}
 
-  /* list */
   main{padding:14px 14px 0;max-width:640px;margin:0 auto;}
-  .section-label{
-    font-family:'Archivo',sans-serif;font-weight:700;font-size:11px;letter-spacing:.12em;
-    text-transform:uppercase;color:var(--ink-soft);margin:18px 4px 8px;
-  }
+  .section-label{font-family:'Archivo',sans-serif;font-weight:700;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-soft);margin:18px 4px 8px;}
   .swipe-wrap{position:relative;border-radius:12px;margin-bottom:8px;overflow:hidden;}
-  .swipe-action{
-    position:absolute;inset:0;display:flex;align-items:center;justify-content:flex-end;padding-right:24px;
-    font-family:'Archivo',sans-serif;font-weight:700;font-size:13px;color:#fff;
-  }
+  .swipe-action{position:absolute;inset:0;display:flex;align-items:center;justify-content:flex-end;padding-right:24px;font-family:'Archivo',sans-serif;font-weight:700;font-size:13px;color:#fff;}
   .swipe-wrap[data-paused="0"] .swipe-action{background:var(--amber);}
   .swipe-wrap[data-paused="1"] .swipe-action{background:var(--red);}
-  .item{
-    background:var(--card);border:1px solid var(--line);border-radius:12px;position:relative;z-index:1;
-    padding:12px 13px;display:flex;gap:11px;align-items:center;touch-action:pan-y;
-  }
+  
+  .item{background:var(--card);border:1px solid var(--line);border-radius:12px;position:relative;z-index:1;padding:12px 13px;display:flex;gap:11px;align-items:center;touch-action:pan-y;}
   .item .dot{width:9px;height:9px;border-radius:50%;flex:0 0 auto;}
   .item-main{flex:1;min-width:0;}
   .item-name{font-weight:600;font-size:15px;line-height:1.25;}
   .item-meta{font-size:12px;color:var(--ink-soft);margin-top:2px;display:flex;flex-wrap:wrap;gap:5px 8px;}
-  .badge{
-    font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;padding:2px 7px;border-radius:5px;
-  }
+  .badge{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;padding:2px 7px;border-radius:5px;}
   .badge.ok{background:var(--green-bg);color:var(--green);}
   .badge.soon{background:var(--amber-bg);color:var(--amber);}
   .badge.expired{background:var(--red-bg);color:var(--red);}
@@ -127,155 +73,78 @@
 
   .item.muted .item-name{color:var(--ink-soft);}
   .item.muted .item-meta{opacity:.75;}
-  .revive-btn{
-    flex:0 0 auto;background:var(--green-bg);color:var(--green);border:1px solid var(--green);border-radius:20px;
-    padding:8px 13px;font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;
-  }
+  .revive-btn{flex:0 0 auto;background:var(--green-bg);color:var(--green);border:1px solid var(--green);border-radius:20px;padding:8px 13px;font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;}
 
   .qty-ctrl{display:flex;align-items:center;gap:0;flex:0 0 auto;}
-  .qty-btn{
-    width:30px;height:30px;border-radius:8px;border:1px solid var(--line);background:var(--input-bg);
-    font-size:16px;font-weight:600;color:var(--ink);cursor:pointer;display:flex;align-items:center;justify-content:center;
-  }
+  .qty-btn{width:30px;height:30px;border-radius:8px;border:1px solid var(--line);background:var(--input-bg);font-size:16px;font-weight:600;color:var(--ink);cursor:pointer;display:flex;align-items:center;justify-content:center;}
   .qty-val{width:48px;text-align:center;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:13px;}
+
+  .bulk-checkbox{width:20px;height:20px;margin-right:4px;cursor:pointer;}
 
   .empty{text-align:center;padding:60px 20px;color:var(--ink-soft);}
   .empty h3{font-size:16px;margin-bottom:6px;color:var(--ink);}
   .empty p{font-size:13px;margin:0;}
 
-  /* fab */
-  .fab-row{
-    position:fixed;bottom:18px;left:0;right:0;display:flex;justify-content:center;gap:10px;z-index:20;
-  }
-  .fab{
-    background:var(--ink);color:var(--paper);border:none;border-radius:26px;
-    padding:14px 22px;font-family:'Archivo',sans-serif;font-weight:700;font-size:14px;
-    display:flex;align-items:center;gap:7px;box-shadow:0 6px 18px rgba(43,42,38,.25);cursor:pointer;
-  }
+  .fab-row{position:fixed;bottom:18px;left:0;right:0;display:flex;justify-content:center;gap:10px;z-index:20;}
+  .fab{background:var(--ink);color:var(--paper);border:none;border-radius:26px;padding:14px 22px;font-family:'Archivo',sans-serif;font-weight:700;font-size:14px;display:flex;align-items:center;gap:7px;box-shadow:0 6px 18px rgba(43,42,38,.25);cursor:pointer;}
   .fab.secondary{background:var(--card);color:var(--ink);border:1px solid var(--line);box-shadow:0 4px 12px rgba(43,42,38,.12);}
 
-  /* modal */
-  .overlay{
-    position:fixed;inset:0;background:rgba(43,42,38,.42);display:none;align-items:flex-end;z-index:50;
-  }
+  .bulk-bar{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--card);border:1px solid var(--line);padding:10px 16px;border-radius:30px;display:none;align-items:center;gap:10px;z-index:30;box-shadow:0 8px 24px rgba(0,0,0,.3);}
+  .bulk-bar.show{display:flex;}
+  .bulk-bar select, .bulk-bar button{padding:6px 10px;font-size:12px;border-radius:8px;border:1px solid var(--line);background:var(--paper);color:var(--ink);cursor:pointer;}
+
+  .overlay{position:fixed;inset:0;background:rgba(43,42,38,.42);display:none;align-items:flex-end;z-index:50;}
   .overlay.show{display:flex;}
-  .sheet{
-    background:var(--paper);width:100%;max-height:92vh;overflow-y:auto;border-radius:18px 18px 0 0;
-    padding:18px 18px 28px;animation:up .18s ease-out;
-  }
+  .sheet{background:var(--paper);width:100%;max-height:92vh;overflow-y:auto;border-radius:18px 18px 0 0;padding:18px 18px 28px;animation:up .18s ease-out;}
   @keyframes up{from{transform:translateY(24px);opacity:0;}to{transform:translateY(0);opacity:1;}}
   .sheet-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
   .sheet-head h2{font-size:18px;}
+  .sheet-head-right{display:flex;align-items:center;gap:8px;}
+  .top-save-btn{background:var(--green);color:#fff;border:none;border-radius:8px;padding:6px 14px;font-weight:700;font-size:13px;cursor:pointer;}
   .close-x{background:none;border:none;font-size:20px;color:var(--ink-soft);cursor:pointer;padding:4px 8px;}
 
   label{display:block;font-size:12px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;text-transform:uppercase;letter-spacing:.06em;}
-  input,select,textarea{
-    width:100%;padding:11px 12px;border-radius:9px;border:1px solid var(--line);background:var(--input-bg);
-    font-family:'Inter',sans-serif;font-size:14px;color:var(--ink);
-  }
+  input,select,textarea{width:100%;padding:11px 12px;border-radius:9px;border:1px solid var(--line);background:var(--input-bg);font-family:'Inter',sans-serif;font-size:14px;color:var(--ink);}
   textarea{resize:vertical;min-height:56px;}
   .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
   .add-new-inline{display:flex;gap:8px;margin-top:8px;}
   .add-new-inline input{flex:1;}
-  .add-new-inline button{
-    background:var(--green);color:#fff;border:none;border-radius:9px;padding:0 14px;font-weight:600;font-size:13px;cursor:pointer;
-  }
-  .primary-btn{
-    width:100%;background:var(--ink);color:var(--paper);border:none;border-radius:12px;padding:14px;
-    font-family:'Archivo',sans-serif;font-weight:700;font-size:15px;margin-top:20px;cursor:pointer;
-  }
-  .danger-btn{
-    width:100%;background:none;color:var(--red);border:1px solid var(--red-bg);border-radius:12px;padding:12px;
-    font-weight:600;font-size:13px;margin-top:10px;cursor:pointer;
-  }
-  .secondary-btn{
-    width:100%;background:none;color:var(--ink);border:1px solid var(--line);border-radius:12px;padding:12px;
-    font-weight:600;font-size:13px;margin-top:10px;cursor:pointer;
-  }
-  .waste-btn{
-    width:100%;background:none;color:var(--amber);border:1px solid var(--amber-bg);border-radius:12px;padding:12px;
-    font-weight:600;font-size:13px;margin-top:10px;cursor:pointer;
-  }
-  .checkbox-row{display:flex;align-items:center;gap:9px;margin-top:16px;font-size:13px;color:var(--ink);}
-  .checkbox-row input{width:auto;}
+  .add-new-inline button{background:var(--green);color:#fff;border:none;border-radius:9px;padding:0 14px;font-weight:600;font-size:13px;cursor:pointer;}
+  .primary-btn{width:100%;background:var(--ink);color:var(--paper);border:none;border-radius:12px;padding:14px;font-family:'Archivo',sans-serif;font-weight:700;font-size:15px;margin-top:20px;cursor:pointer;}
+  .danger-btn{width:100%;background:none;color:var(--red);border:1px solid var(--red-bg);border-radius:12px;padding:12px;font-weight:600;font-size:13px;margin-top:10px;cursor:pointer;}
+  .secondary-btn{width:100%;background:none;color:var(--ink);border:1px solid var(--line);border-radius:12px;padding:12px;font-weight:600;font-size:13px;margin-top:10px;cursor:pointer;}
+  .waste-btn{width:100%;background:none;color:var(--amber);border:1px solid var(--amber-bg);border-radius:12px;padding:12px;font-weight:600;font-size:13px;margin-top:10px;cursor:pointer;}
 
   .waste-summary{margin-bottom:16px;}
   .waste-stat{font-size:13px;color:var(--ink-soft);margin-bottom:4px;}
   .waste-stat strong{color:var(--ink);}
-  .waste-row{
-    background:var(--card);border:1px solid var(--line);border-radius:12px;cursor:pointer;
-    padding:12px 13px;margin-bottom:8px;display:flex;gap:11px;align-items:center;
-  }
+  .waste-row{background:var(--card);border:1px solid var(--line);border-radius:12px;cursor:pointer;padding:12px 13px;margin-bottom:8px;display:flex;gap:11px;align-items:center;}
   .waste-row-main{flex:1;min-width:0;}
-  .stray-row-actions{display:flex;gap:6px;flex:0 0 auto;}
-  .badge.waste-reason{background:var(--line);color:var(--ink-soft);}
-  .activity-row{
-    background:var(--card);border:1px solid var(--line);border-radius:12px;
-    padding:11px 13px;margin-bottom:7px;
-  }
-  .sort-option{
-    background:var(--card);border:1px solid var(--line);border-radius:12px;
-    padding:13px 14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;
-    cursor:pointer;font-size:14px;font-weight:600;color:var(--ink);
-  }
+  .activity-row{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px 13px;margin-bottom:7px;}
+  .sort-option{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:13px 14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;font-size:14px;font-weight:600;color:var(--ink);}
   .sort-option.active{border-color:var(--green);color:var(--green);}
-  .confirm-log-btn{
-    width:100%;background:var(--amber);color:#fff;border:none;border-radius:12px;padding:13px;
-    font-family:'Archivo',sans-serif;font-weight:700;font-size:14px;margin-top:20px;cursor:pointer;
-  }
 
-  .gate{
-    min-height:100vh;min-height:100dvh;display:flex;align-items:center;justify-content:center;
-    padding:24px;background:var(--paper);
-  }
+  .gate{min-height:100vh;min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:24px;background:var(--paper);}
   .gate-card{width:100%;max-width:360px;}
   .gate-error{color:var(--red);font-size:12.5px;margin:10px 0 0;min-height:16px;}
 
-  .sheet-actions{
-    position:sticky;bottom:0;background:var(--paper);
-    margin:20px -18px 0;padding:14px 18px calc(14px + env(safe-area-inset-bottom, 0px));
-    border-top:1px solid var(--line);
-  }
+  .sheet-actions{position:sticky;bottom:0;background:var(--paper);margin:20px -18px 0;padding:14px 18px calc(14px + env(safe-area-inset-bottom, 0px));border-top:1px solid var(--line);}
   .helper{font-size:11px;color:var(--ink-soft);margin-top:4px;}
 
   .export-cats,.export-shops{display:flex;flex-wrap:wrap;gap:7px;margin-top:8px;}
-  .export-out{
-    margin-top:16px;background:var(--input-bg);border:1px solid var(--line);border-radius:10px;padding:12px;
-    font-family:'IBM Plex Mono',monospace;font-size:12.5px;white-space:pre-wrap;max-height:260px;overflow-y:auto;
-  }
-  .copy-btn{
-    width:100%;background:var(--green);color:#fff;border:none;border-radius:12px;padding:13px;
-    font-family:'Archivo',sans-serif;font-weight:700;font-size:14px;margin-top:10px;cursor:pointer;
-  }
-  .toast{
-    position:fixed;bottom:100px;left:50%;transform:translateX(-50%);
-    background:var(--ink);color:var(--paper);padding:10px 18px;border-radius:20px;font-size:13px;
-    font-weight:600;z-index:100;opacity:0;pointer-events:none;transition:opacity .2s;
-    display:flex;align-items:center;gap:14px;max-width:88vw;
-  }
+  .export-out{margin-top:16px;background:var(--input-bg);border:1px solid var(--line);border-radius:10px;padding:12px;font-family:'IBM Plex Mono',monospace;font-size:12.5px;white-space:pre-wrap;max-height:260px;overflow-y:auto;}
+  .copy-btn{width:100%;background:var(--green);color:#fff;border:none;border-radius:12px;padding:13px;font-family:'Archivo',sans-serif;font-weight:700;font-size:14px;margin-top:10px;cursor:pointer;}
+  .toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:10px 18px;border-radius:20px;font-size:13px;font-weight:600;z-index:100;opacity:0;pointer-events:none;transition:opacity .2s;display:flex;align-items:center;gap:14px;max-width:88vw;}
   .toast.show{opacity:1;pointer-events:auto;}
-  .toast-undo{
-    background:none;border:none;color:var(--paper);font-weight:700;text-decoration:underline;
-    cursor:pointer;padding:0;font-size:13px;font-family:'Inter',sans-serif;flex:0 0 auto;
-  }
+  .toast-undo{background:none;border:none;color:var(--paper);font-weight:700;text-decoration:underline;cursor:pointer;padding:0;font-size:13px;font-family:'Inter',sans-serif;flex:0 0 auto;}
 
-  .status-banner{
-    display:none;margin:0 4px 12px;padding:10px 12px;border-radius:10px;font-size:12.5px;
-    background:var(--amber-bg);color:var(--amber);font-weight:500;
-  }
+  .status-banner{display:none;margin:0 4px 12px;padding:10px 12px;border-radius:10px;font-size:12.5px;background:var(--amber-bg);color:var(--amber);font-weight:500;}
   .status-banner.show{display:block;}
   .status-banner.offline{background:#DEE4EA;color:#3A5A78;}
 
   .manage-section{margin-top:18px;}
-  .manage-chip{
-    display:inline-flex;align-items:center;gap:6px;font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;
-    padding:6px 6px 6px 11px;border-radius:20px;border:1px solid var(--line);background:var(--card);color:var(--ink);
-    margin:0 6px 6px 0;
-  }
-  .manage-chip button{
-    background:var(--red-bg);color:var(--red);border:none;border-radius:50%;width:18px;height:18px;
-    font-size:11px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;
-  }
+  .manage-chip{display:inline-flex;align-items:center;gap:6px;font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;padding:6px 6px 6px 11px;border-radius:20px;border:1px solid var(--line);background:var(--card);color:var(--ink);margin:0 6px 6px 0;}
+  .manage-chip button{background:var(--red-bg);color:var(--red);border:none;border-radius:50%;width:18px;height:18px;font-size:11px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;}
 </style>
 </head>
 <body>
@@ -299,15 +168,16 @@
 <header>
   <span class="label-tag">Shared &amp; live</span>
   <h1>Shelf</h1>
-  <p>What's in the house, and when it runs out. <span class="mono" style="opacity:.55;">v1.11</span></p>
+  <p>What's in the house, and when it runs out. <span class="mono" style="opacity:.55;">v1.12</span></p>
   <div class="toolbar">
     <button class="icon-btn" id="searchBtn" title="Search">🔍</button>
     <button class="icon-btn" id="sortBtn" title="Sort">⇅</button>
+    <button class="icon-btn" id="multiSelectBtn" title="Select multiple">☑</button>
     <button class="icon-btn" id="themeBtn" title="Switch theme">☀</button>
     <button class="icon-btn" id="wasteHistoryBtn" title="Waste log">🗑</button>
     <button class="icon-btn" id="activityBtn" title="Activity log">🕐</button>
     <button class="icon-btn" id="accountBtn" title="Account / sign out">👤</button>
-    <button class="icon-btn" id="manageBtn" title="Manage categories, shops, locations">⚙</button>
+    <button class="icon-btn" id="manageBtn" title="Manage lists">⚙</button>
   </div>
   <div class="search-row" id="searchRow" style="display:none;">
     <input class="search" id="searchInput" placeholder="Search items…" autocomplete="off">
@@ -322,9 +192,22 @@
   <div id="listRoot"></div>
 </main>
 
-<div class="fab-row">
+<div class="fab-row" id="fabRow">
   <button class="fab secondary" id="exportFab">↗ Export list</button>
   <button class="fab" id="addFab">+ Add item</button>
+</div>
+
+<!-- Bulk Multi-Select Bar -->
+<div class="bulk-bar" id="bulkBar">
+  <span id="bulkCount" class="mono" style="font-size:12px;font-weight:600;">0 selected</span>
+  <select id="bulkActionSelect">
+    <option value="">Bulk Action…</option>
+    <option value="shop">Set Shop</option>
+    <option value="location">Set Location</option>
+    <option value="category">Set Category</option>
+    <option value="delete">Delete Selected</option>
+  </select>
+  <button id="bulkCancelBtn">Cancel</button>
 </div>
 
 <!-- Add/Edit Item Sheet -->
@@ -332,12 +215,16 @@
   <div class="sheet">
     <div class="sheet-head">
       <h2 id="itemFormTitle">Add item</h2>
-      <button class="close-x" data-close="itemOverlay">✕</button>
+      <div class="sheet-head-right">
+        <button class="top-save-btn" id="topSaveItemBtn">Save</button>
+        <button class="close-x" data-close="itemOverlay">✕</button>
+      </div>
     </div>
     <input type="hidden" id="editingId">
 
     <label>Name</label>
-    <input id="fName" placeholder="e.g. Oat milk">
+    <input id="fName" placeholder="e.g. Oat milk" list="fNameSuggestions" autocomplete="off">
+    <datalist id="fNameSuggestions"></datalist>
     <p class="helper" id="fNameWarning" style="display:none;color:var(--amber);"></p>
 
     <div class="row2">
@@ -392,8 +279,8 @@
       </div>
     </div>
 
-    <label>Low-stock alert when quantity drops below (optional)</label>
-    <input id="fThreshold" type="number" inputmode="decimal" min="0" step="1" placeholder="e.g. 2">
+    <label>Low-stock alert threshold (default: 2)</label>
+    <input id="fThreshold" type="number" inputmode="decimal" min="0" step="1" placeholder="Defaults to 2 if blank">
 
     <label>Notes (optional)</label>
     <textarea id="fNotes" placeholder="Brand, variant, anything useful…"></textarea>
@@ -408,7 +295,6 @@
   </div>
 </div>
 
-<!-- Export Sheet -->
 <!-- Sort Sheet -->
 <div class="overlay" id="sortOverlay">
   <div class="sheet">
@@ -420,6 +306,7 @@
   </div>
 </div>
 
+<!-- Export Sheet -->
 <div class="overlay" id="exportOverlay">
   <div class="sheet">
     <div class="sheet-head">
@@ -463,11 +350,10 @@
       <h2>Manage lists</h2>
       <button class="close-x" data-close="manageOverlay">✕</button>
     </div>
-    <p class="helper" style="margin-top:0;">Tap the ✕ on a tag to remove it. If items are using it, you'll be asked to confirm — deleting clears that field on those items. Each list needs at least one option.</p>
+    <p class="helper" style="margin-top:0;">Tap the ✕ on a tag to remove it.</p>
 
     <div class="manage-section" id="strayValuesSection" style="display:none;">
       <label style="margin-top:0;">Stray values found</label>
-      <p class="helper" style="margin-top:0;">Set on some items or waste entries but not in any list below — usually left over from before a value was deleted. Add it back, or clear it from what's using it.</p>
       <div id="strayValuesList"></div>
     </div>
 
@@ -536,7 +422,6 @@
         <option>pcs</option><option>kg</option><option>g</option><option>L</option><option>ml</option><option>pack</option>
       </select>
     </div>
-    <p class="helper" style="margin-top:6px;">Unit defaults to the item's, but change it if you're logging in a different unit (e.g. tossing 2 pieces from a kg-tracked bag).</p>
 
     <label>Reason</label>
     <select id="lwReason"></select>
@@ -574,23 +459,18 @@
       <h2>Activity</h2>
       <button class="close-x" data-close="activityOverlay">✕</button>
     </div>
-    <p class="helper" style="margin-top:0;">The most recent 200 actions, newest first — who added, used, restocked, removed, or threw out what.</p>
     <div id="activityList"></div>
   </div>
 </div>
 
 <div class="toast" id="toast"><span id="toastMsg"></span><button id="toastUndo" class="toast-undo" style="display:none;">Undo</button></div>
 
-</div><!-- /appRoot -->
+</div>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script>
-/* =========================================================
-   1) FIREBASE CONFIG — replace with YOUR project's config.
-   See SETUP.md for exactly where to find these values.
-   ========================================================= */
 const firebaseConfig = {
   apiKey: "AIzaSyDYfENTOZfMuqbNGY1sCO13aeTP6oVjdtk",
   authDomain: "myinventory-ad768.firebaseapp.com",
@@ -602,17 +482,11 @@ const firebaseConfig = {
 
 const CONFIG_IS_SET = !Object.values(firebaseConfig).some(v => String(v).includes("REPLACE_ME"));
 const banner = document.getElementById('statusBanner');
-if (!CONFIG_IS_SET){
-  banner.textContent = "Setup needed: this app isn't connected to a database yet. Follow SETUP.md, then edit the firebaseConfig block in index.html.";
-  banner.classList.add('show');
-  document.getElementById('gateError').textContent = "App isn't connected to a database yet — see SETUP.md.";
-  document.getElementById('signInBtn').disabled = true;
-}
 
 function updateOnlineBanner(){
   const ob = document.getElementById('offlineBanner');
   if(!navigator.onLine){
-    ob.textContent = "You're offline — showing the last synced data. Changes will save once you're back online.";
+    ob.textContent = "You're offline — showing last synced data.";
     ob.classList.add('show');
   } else {
     ob.classList.remove('show');
@@ -626,60 +500,32 @@ let db = null, auth = null, currentUser = null;
 if (CONFIG_IS_SET){
   firebase.initializeApp(firebaseConfig);
   db = firebase.firestore();
-  db.enablePersistence({synchronizeTabs:true}).catch(()=>{
-    /* Persistence unavailable (private browsing, or open in >1 tab without sync) — app still works online. */
-  });
+  db.enablePersistence({synchronizeTabs:true}).catch(()=>{});
   auth = firebase.auth();
   auth.onAuthStateChanged(u => {
-    if (u && u.isAnonymous){
-      // Leftover session from before real sign-in existed — reject it.
-      auth.signOut();
-      return; // onAuthStateChanged will fire again with u = null
-    }
+    if (u && u.isAnonymous){ auth.signOut(); return; }
     currentUser = u;
     const gate = document.getElementById('signInGate');
     const root = document.getElementById('appRoot');
     if (u){
-      gate.style.display = 'none';
-      root.style.display = '';
-      initData();
+      gate.style.display = 'none'; root.style.display = ''; initData();
     } else {
-      gate.style.display = 'flex';
-      root.style.display = 'none';
+      gate.style.display = 'flex'; root.style.display = 'none';
     }
   });
 }
 
-function friendlyAuthError(code){
-  const map = {
-    'auth/invalid-email': "That email address doesn't look right.",
-    'auth/user-not-found': "No account with that email.",
-    'auth/wrong-password': "Wrong password.",
-    'auth/invalid-credential': "Email or password is incorrect.",
-    'auth/too-many-requests': "Too many attempts — wait a bit and try again.",
-    'auth/network-request-failed': "Network error — check your connection."
-  };
-  return map[code] || "Couldn't sign in — try again.";
-}
 document.getElementById('signInBtn').onclick = async ()=>{
   const email = document.getElementById('gateEmail').value.trim();
   const pass = document.getElementById('gatePassword').value;
   const errEl = document.getElementById('gateError');
   errEl.textContent = '';
-  if(!CONFIG_IS_SET){ errEl.textContent = "App isn't connected yet — see SETUP.md."; return; }
   if(!email || !pass){ errEl.textContent = "Enter both email and password."; return; }
-  try{
-    await auth.signInWithEmailAndPassword(email, pass);
-  }catch(err){
-    errEl.textContent = friendlyAuthError(err.code);
-  }
+  try{ await auth.signInWithEmailAndPassword(email, pass); }
+  catch(err){ errEl.textContent = "Couldn't sign in — check credentials."; }
 };
-document.getElementById('gatePassword').addEventListener('keydown', e=>{
-  if(e.key === 'Enter') document.getElementById('signInBtn').click();
-});
-document.getElementById('accountBtn').onclick = ()=>{
-  if(confirm("Sign out of Shelf on this device?")) auth.signOut();
-};
+document.getElementById('gatePassword').addEventListener('keydown', e=>{ if(e.key === 'Enter') document.getElementById('signInBtn').click(); });
+document.getElementById('accountBtn').onclick = ()=>{ if(confirm("Sign out of Shelf?")) auth.signOut(); };
 
 /* ---------- defaults ---------- */
 const DEFAULT_CATEGORIES = ["Food","Cleaning","Toiletries","Pets","Other"];
@@ -698,8 +544,9 @@ let items = [];
 let wasteLog = [];
 let activityLog = [];
 let activeFilters = { category: null, shop: null };
-let sortMode = "expiry"; // expiry | name | runway | category | subcategory | location | shop
+let sortMode = "expiry"; 
 const SORT_OPTIONS = [
+  {id:'created', label:'Last added (newest first)'},
   {id:'expiry', label:'Expiry date (soonest first)'},
   {id:'name', label:'Name (A–Z)'},
   {id:'runway', label:'Closest to running out'},
@@ -709,8 +556,17 @@ const SORT_OPTIONS = [
   {id:'shop', label:'Shop (grouped)'}
 ];
 let searchTerm = "";
+let isMultiSelectMode = false;
+let selectedItemIds = new Set();
 
-/* ---------- data init & sync ---------- */
+/* ---------- helpers & date formatting ---------- */
+function formatDate(dateStr){
+  if(!dateStr) return '';
+  const p = dateStr.split('-');
+  return p.length === 3 ? `${p[2]}.${p[1]}.${p[0]}` : dateStr;
+}
+
+/* ---------- data sync ---------- */
 const DEFAULTS_MAP = {categories:DEFAULT_CATEGORIES, shops:DEFAULT_SHOPS, locations:DEFAULT_LOCATIONS, subcategories:DEFAULT_SUBCATEGORIES, wasteReasons:DEFAULT_WASTE_REASONS};
 
 function initData(){
@@ -726,35 +582,38 @@ function initData(){
     renderFilterRow();
     renderExportFilters();
     renderManageSheet();
-  }, err => showToast("Sync error: " + err.message));
+  });
 
   db.collection('items').orderBy('name').onSnapshot(snap=>{
     items = snap.docs.map(d=>({id:d.id, ...d.data()}));
     renderList();
     renderManageSheet();
-  }, err => showToast("Sync error: " + err.message));
+    populateNameSuggestions();
+  });
 
   db.collection('waste').orderBy('createdAt','desc').onSnapshot(snap=>{
     wasteLog = snap.docs.map(d=>({id:d.id, ...d.data()}));
     renderWasteHistory();
     renderManageSheet();
-  }, err => showToast("Sync error: " + err.message));
+    populateNameSuggestions();
+  });
 
   db.collection('activity').orderBy('createdAt','desc').limit(200).onSnapshot(snap=>{
     activityLog = snap.docs.map(d=>({id:d.id, ...d.data()}));
     renderActivityList();
-  }, err => showToast("Sync error: " + err.message));
+  });
 }
+
 async function logActivity(type, message, extra){
-  // Best-effort — a logging failure must never block or fail the primary action it describes.
   try{
     await db.collection('activity').add(Object.assign({
       type, message,
       userEmail: (auth.currentUser && auth.currentUser.email) || null,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     }, extra || {}));
-  }catch(err){ console.warn('activity log failed', err); }
+  }catch(err){}
 }
+
 async function seedDefaultsIfMissing(){
   const ref = db.collection('meta').doc('settings');
   try{
@@ -764,9 +623,9 @@ async function seedDefaultsIfMissing(){
         t.set(ref, {categories:DEFAULT_CATEGORIES, subcategories:DEFAULT_SUBCATEGORIES, shops:DEFAULT_SHOPS, locations:DEFAULT_LOCATIONS, wasteReasons:DEFAULT_WASTE_REASONS});
       }
     });
-  }catch(e){ /* another device may have seeded it first — fine */ }
+  }catch(e){}
 }
-const FIELD_SINGULAR = {categories:'category', subcategories:'subcategory', shops:'shop', locations:'location', wasteReasons:'reason'};
+
 function localArrayFor(field){
   if(field==='categories') return categories;
   if(field==='shops') return shops;
@@ -774,13 +633,22 @@ function localArrayFor(field){
   if(field==='subcategories') return subcategories;
   if(field==='wasteReasons') return wasteReasons;
 }
+
 async function addListValue(field, value){
   value = value.trim();
   if(!value) return;
-  await db.collection('meta').doc('settings').set(
-    {[field]: firebase.firestore.FieldValue.arrayUnion(value)}, {merge:true}
-  );
+  const docRef = db.collection('meta').doc('settings');
+  const doc = await docRef.get();
+  const defaults = DEFAULTS_MAP[field] || [];
+  
+  if(!doc.exists || !doc.data()[field] || doc.data()[field].length === 0){
+    const merged = Array.from(new Set([...defaults, value]));
+    await docRef.set({[field]: merged}, {merge:true});
+  } else {
+    await docRef.set({[field]: firebase.firestore.FieldValue.arrayUnion(value)}, {merge:true});
+  }
 }
+
 async function deleteListValue(field, value){
   const cur = localArrayFor(field);
   if(cur.length <= 1){ showToast("Keep at least one"); return; }
@@ -788,14 +656,9 @@ async function deleteListValue(field, value){
   const isWasteField = field === 'wasteReasons';
   const sourceCollection = isWasteField ? 'waste' : 'items';
   const sourceArray = isWasteField ? wasteLog : items;
-  const noun = isWasteField
-    ? (affectedCount => affectedCount===1 ? 'waste log entry' : 'waste log entries')
-    : (affectedCount => affectedCount===1 ? 'item' : 'items');
   const affected = sourceArray.filter(i=>i[fieldSingular]===value);
-  const msg = affected.length>0
-    ? `${affected.length} ${noun(affected.length)} currently use "${value}" as their ${fieldSingular}. Deleting it will clear that field. Continue?`
-    : `Remove "${value}" from the list?`;
-  if(!confirm(msg)) return;
+  if(!confirm(`Remove "${value}"?`)) return;
+  
   const batch = db.batch();
   affected.forEach(i=>{
     const patch = { [fieldSingular]: null };
@@ -805,11 +668,11 @@ async function deleteListValue(field, value){
   batch.update(db.collection('meta').doc('settings'), {
     [field]: firebase.firestore.FieldValue.arrayRemove(value)
   });
-  try{
-    await batch.commit();
-    showToast(`"${value}" removed`);
-  }catch(err){ showToast("Couldn't remove: " + err.message); }
+  try{ await batch.commit(); showToast(`"${value}" removed`); }
+  catch(err){ showToast("Couldn't remove: " + err.message); }
 }
+
+const FIELD_SINGULAR = {categories:'category', subcategories:'subcategory', shops:'shop', locations:'location', wasteReasons:'reason'};
 
 /* ---------- freshness / low-stock logic ---------- */
 function daysUntil(dateStr){
@@ -818,27 +681,20 @@ function daysUntil(dateStr){
   const target = new Date(dateStr + "T00:00:00");
   return Math.round((target - today) / 86400000);
 }
-function formatDuration(absDays){
-  if(absDays < 30) return `${absDays}d`;
-  if(absDays < 365){
-    const months = Math.floor(absDays/30), rem = absDays%30;
-    return rem>0 ? `${months}mo ${rem}d` : `${months}mo`;
-  }
-  const years = Math.floor(absDays/365), remDays = absDays%365, months = Math.floor(remDays/30);
-  return months>0 ? `${years}y ${months}mo` : `${years}y`;
-}
+
 function freshnessStatus(item){
   const d = daysUntil(item.expiryDate);
   if(d === null) return null;
-  if(d < 0) return {level:'expired', label: `Expired ${formatDuration(Math.abs(d))} ago`};
+  if(d < 0) return {level:'expired', label: `Expired ${formatDate(item.expiryDate)}`};
   if(d === 0) return {level:'soon', label:'Expires today'};
-  if(d <= 7) return {level:'soon', label: `${d}d left`};
-  return {level:'ok', label: `${formatDuration(d)} left`};
+  if(d <= 7) return {level:'soon', label: `${d}d left (${formatDate(item.expiryDate)})`};
+  return {level:'ok', label: `${formatDate(item.expiryDate)}`};
 }
+
 function lowStockStatus(item){
   if(item.paused) return null;
-  if(item.lowStockThreshold == null || item.lowStockThreshold === '') return null;
-  return item.quantity < Number(item.lowStockThreshold);
+  const threshold = (item.lowStockThreshold == null || item.lowStockThreshold === '') ? 2 : Number(item.lowStockThreshold);
+  return item.quantity < threshold;
 }
 
 /* ---------- rendering ---------- */
@@ -848,9 +704,7 @@ function populateSelects(){
   fillSelect('fShop', shops);
   fillSelect('fLocation', locations, true);
 }
-function populateReasonSelect(){
-  fillSelect('lwReason', wasteReasons);
-}
+function populateReasonSelect(){ fillSelect('lwReason', wasteReasons); }
 function fillSelect(id, arr, allowBlank){
   const sel = document.getElementById(id);
   const cur = sel.value;
@@ -860,6 +714,14 @@ function fillSelect(id, arr, allowBlank){
   if(cur === '' && allowBlank) sel.value = '';
   else if(arr.includes(cur)) sel.value = cur;
 }
+
+function populateNameSuggestions(){
+  const dl = document.getElementById('fNameSuggestions');
+  if(!dl) return;
+  const names = new Set(items.map(i=>i.name.trim()).concat(wasteLog.map(w=>w.name.trim())).filter(Boolean));
+  dl.innerHTML = Array.from(names).sort().map(n=>`<option value="${esc(n)}"></option>`).join('');
+}
+
 function renderFilterRow(){
   const row = document.getElementById('filterRow');
   const cats = categories.filter(c=>items.some(i=>i.category===c));
@@ -867,31 +729,7 @@ function renderFilterRow(){
     `<span class="chip ${activeFilters.category===c?'on':''}" data-filter-cat="${esc(c)}">${esc(c)}</span>`
   ).join('');
 }
-function renderExportFilters(){
-  const catWrap = document.getElementById('exportCats');
-  catWrap.innerHTML = categories.map(c=>
-    `<span class="chip ${exportState.cats.has(c)?'on':''}" data-excat="${esc(c)}">${esc(c)}</span>`
-  ).join('');
 
-  const subcatWrap = document.getElementById('exportSubcats');
-  let subcatHtml = subcategories.map(s=>
-    `<span class="chip ${exportState.subcats && exportState.subcats.has(s)?'on':''}" data-exsubcat="${esc(s)}">${esc(s)}</span>`
-  ).join('');
-  subcatHtml += `<span class="chip ${exportState.subcats && exportState.subcats.has('__none__')?'on':''}" data-exsubcat="__none__">No sub-category</span>`;
-  subcatWrap.innerHTML = subcatHtml;
-
-  const shopWrap = document.getElementById('exportShops');
-  shopWrap.innerHTML = `<span class="chip ${exportState.shop===null?'on':''}" data-exshop="">All shops</span>` +
-    shops.map(s=>
-      `<span class="chip ${exportState.shop===s?'on':''}" data-exshop="${esc(s)}">${esc(s)}</span>`
-    ).join('');
-
-  const locWrap = document.getElementById('exportLocations');
-  locWrap.innerHTML = `<span class="chip ${exportState.location===null?'on':''}" data-exlocation="">All locations</span>` +
-    locations.map(l=>
-      `<span class="chip ${exportState.location===l?'on':''}" data-exlocation="${esc(l)}">${esc(l)}</span>`
-    ).join('');
-}
 function renderSortOptions(){
   const root = document.getElementById('sortOptionsList');
   root.innerHTML = SORT_OPTIONS.map(o=>`
@@ -902,122 +740,11 @@ function renderSortOptions(){
 document.getElementById('sortOptionsList').addEventListener('click', e=>{
   const opt = e.target.closest('[data-sortoption]')?.dataset.sortoption;
   if(!opt) return;
-  sortMode = opt;
-  renderList();
-  closeOverlay('sortOverlay');
-});
-const FIELD_LABEL = {categories:'Category', subcategories:'Sub-category', shops:'Shop', locations:'Location', wasteReasons:'Waste reason'};
-function findOrphanedValues(field){
-  const fieldSingular = FIELD_SINGULAR[field];
-  const current = new Set(localArrayFor(field));
-  const sourceArray = field === 'wasteReasons' ? wasteLog : items;
-  const found = new Set();
-  sourceArray.forEach(i=>{
-    const v = i[fieldSingular];
-    if(v && !current.has(v)) found.add(v);
-  });
-  return [...found];
-}
-function computeStrayValues(){
-  const results = [];
-  ['categories','subcategories','shops','locations','wasteReasons'].forEach(field=>{
-    findOrphanedValues(field).forEach(v=>results.push({field, value:v}));
-  });
-  return results;
-}
-function renderStrayValues(){
-  const strays = computeStrayValues();
-  const section = document.getElementById('strayValuesSection');
-  const list = document.getElementById('strayValuesList');
-  if(strays.length===0){ section.style.display='none'; return; }
-  section.style.display = 'block';
-  list.innerHTML = strays.map(s=>`
-    <div class="waste-row" style="cursor:default;">
-      <div class="waste-row-main">
-        <div class="item-name">${esc(s.value)}</div>
-        <div class="item-meta"><span>${esc(FIELD_LABEL[s.field])}</span></div>
-      </div>
-      <div class="stray-row-actions">
-        <button class="qty-btn" data-strayadd-field="${esc(s.field)}" data-strayadd-value="${esc(s.value)}" title="Add back to list">+</button>
-        <button class="qty-btn" data-strayclear-field="${esc(s.field)}" data-strayclear-value="${esc(s.value)}" title="Clear from items">✕</button>
-      </div>
-    </div>`).join('');
-}
-document.getElementById('strayValuesList').addEventListener('click', async e=>{
-  const addBtn = e.target.closest('[data-strayadd-field]');
-  const clearBtn = e.target.closest('[data-strayclear-field]');
-  if(addBtn){
-    const field = addBtn.dataset.strayaddField, value = addBtn.dataset.strayaddValue;
-    const arr = localArrayFor(field);
-    if(arr && !arr.includes(value)) arr.push(value);
-    renderManageSheet();
-    if(field === 'wasteReasons'){ populateReasonSelect(); } else { populateSelects(); }
-    try{ await addListValue(field, value); }
-    catch(err){ showToast("Couldn't save: " + err.message); }
-  } else if(clearBtn){
-    const field = clearBtn.dataset.strayclearField, value = clearBtn.dataset.strayclearValue;
-    const fieldSingular = FIELD_SINGULAR[field];
-    const isWasteField = field === 'wasteReasons';
-    const sourceCollection = isWasteField ? 'waste' : 'items';
-    const sourceArray = isWasteField ? wasteLog : items;
-    const affected = sourceArray.filter(i=>i[fieldSingular]===value);
-    if(!confirm(`Clear "${value}" from ${affected.length} ${affected.length===1?'entry':'entries'}?`)) return;
-    const batch = db.batch();
-    affected.forEach(i=>{
-      const patch = {[fieldSingular]: null};
-      if(!isWasteField) patch.updatedAt = firebase.firestore.FieldValue.serverTimestamp();
-      batch.update(db.collection(sourceCollection).doc(i.id), patch);
-    });
-    try{ await batch.commit(); showToast(`Cleared "${value}"`); }
-    catch(err){ showToast("Couldn't clear: " + err.message); }
-  }
-});
-function renderManageSheet(){
-  renderManageGroup('manageCats', categories, 'categories');
-  renderManageGroup('manageSubcats', subcategories, 'subcategories');
-  renderManageGroup('manageShops', shops, 'shops');
-  renderManageGroup('manageLocations', locations, 'locations');
-  renderManageGroup('manageReasons', wasteReasons, 'wasteReasons');
-  renderStrayValues();
-}
-function renderManageGroup(rootId, list, field){
-  const root = document.getElementById(rootId);
-  root.innerHTML = list.map(v=>
-    `<span class="manage-chip">${esc(v)}<button data-delvalue="${esc(v)}" data-delfield="${field}">✕</button></span>`
-  ).join('');
-}
-document.getElementById('manageBtn').onclick = ()=>{
-  renderManageSheet();
-  document.getElementById('manageOverlay').classList.add('show');
-  history.pushState({overlay:'manageOverlay'}, '');
-};
-document.getElementById('manageOverlay').addEventListener('click', e=>{
-  const btn = e.target.closest('[data-delvalue]');
-  if(btn) deleteListValue(btn.dataset.delfield, btn.dataset.delvalue);
-});
-const MANAGE_ADD_INPUT_IDS = {
-  categories:'manageCatsNew', subcategories:'manageSubcatsNew', shops:'manageShopsNew', locations:'manageLocationsNew', wasteReasons:'manageReasonsNew'
-};
-document.querySelectorAll('[data-manageadd]').forEach(btn=>{
-  btn.onclick = async ()=>{
-    const field = btn.dataset.manageadd;
-    const input = document.getElementById(MANAGE_ADD_INPUT_IDS[field]);
-    const val = input.value.trim();
-    if(!val) return;
-    const arr = localArrayFor(field);
-    if(arr && !arr.includes(val)) arr.push(val);
-    renderManageSheet();
-    if(field === 'wasteReasons'){ populateReasonSelect(); } else { populateSelects(); }
-    input.value = '';
-    try{
-      await addListValue(field, val);
-    }catch(err){
-      showToast("Couldn't save: " + err.message);
-    }
-  };
+  sortMode = opt; renderList(); closeOverlay('sortOverlay');
 });
 
 const GROUPING_FIELDS = {category:'category', subcategory:'subcategory', location:'location', shop:'shop'};
+
 function renderList(){
   const root = document.getElementById('listRoot');
   let filtered = items.filter(i=>{
@@ -1029,44 +756,38 @@ function renderList(){
   const pausedList = filtered.filter(i=>i.paused).sort((a,b)=>a.name.localeCompare(b.name));
 
   const groupField = GROUPING_FIELDS[sortMode];
-  if(sortMode === 'name'){
+  if(sortMode === 'created'){
+    list.sort((a,b)=>{
+      const ta = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
+      const tb = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
+      return tb - ta;
+    });
+  } else if(sortMode === 'name'){
     list.sort((a,b)=>a.name.localeCompare(b.name));
   } else if(sortMode === 'runway'){
     list.sort((a,b)=>{
-      const hasA = a.lowStockThreshold != null && a.lowStockThreshold !== '';
-      const hasB = b.lowStockThreshold != null && b.lowStockThreshold !== '';
-      if(hasA && hasB){
-        return (a.quantity - Number(a.lowStockThreshold)) - (b.quantity - Number(b.lowStockThreshold));
-      }
-      if(hasA && !hasB) return -1;
-      if(!hasA && hasB) return 1;
-      // neither has a threshold set — no runway to compute, fall back to raw quantity then name
-      if(a.quantity !== b.quantity) return a.quantity - b.quantity;
-      return a.name.localeCompare(b.name);
+      const tA = (a.lowStockThreshold == null || a.lowStockThreshold === '') ? 2 : Number(a.lowStockThreshold);
+      const tB = (b.lowStockThreshold == null || b.lowStockThreshold === '') ? 2 : Number(b.lowStockThreshold);
+      return (a.quantity - tA) - (b.quantity - tB);
     });
   } else if(groupField){
     list.sort((a,b)=>{
-      const av = a[groupField] || '';
-      const bv = b[groupField] || '';
+      const av = a[groupField] || ''; const bv = b[groupField] || '';
       if(av === bv) return a.name.localeCompare(b.name);
-      if(!av) return 1;
-      if(!bv) return -1;
       return av.localeCompare(bv);
     });
   } else {
     list.sort((a,b)=>{
       const da = daysUntil(a.expiryDate); const db_ = daysUntil(b.expiryDate);
       if(da===null && db_===null) return a.name.localeCompare(b.name);
-      if(da===null) return 1;
-      if(db_===null) return -1;
+      if(da===null) return 1; if(db_===null) return -1;
       return da-db_;
     });
   }
 
   if(list.length===0 && pausedList.length===0){
-    root.innerHTML = `<div class="empty"><h3>Nothing here yet</h3><p>${items.length===0 ? "Tap “Add item” to start stocking the shelf." : "No items match your search or filter."}</p></div>`;
-    renderFilterRow();
-    return;
+    root.innerHTML = `<div class="empty"><h3>Nothing here yet</h3><p>Tap “Add item” to start stocking your shelf.</p></div>`;
+    renderFilterRow(); return;
   }
 
   let html = '';
@@ -1088,7 +809,9 @@ function renderList(){
   }
   root.innerHTML = html;
   renderFilterRow();
+  updateBulkBar();
 }
+
 function renderItemCard(item){
   const fresh = freshnessStatus(item);
   const low = lowStockStatus(item);
@@ -1098,6 +821,11 @@ function renderItemCard(item){
   if(fresh) badges += `<span class="badge ${fresh.level}">${fresh.label}</span>`;
   if(low) badges += `<span class="badge low">Low stock</span>`;
   const metaBits = [item.category, item.subcategory, item.shop, item.location].filter(Boolean);
+  
+  const cbHtml = isMultiSelectMode 
+    ? `<input type="checkbox" class="bulk-checkbox" data-multicheck="${esc(item.id)}" ${selectedItemIds.has(item.id)?'checked':''}>`
+    : '';
+
   const rightControl = item.paused
     ? `<button class="revive-btn" data-revive="${esc(item.id)}">↻ Restock</button>`
     : `<div class="qty-ctrl">
@@ -1105,10 +833,12 @@ function renderItemCard(item){
         <span class="qty-val mono">${esc(item.quantity)}</span>
         <button class="qty-btn" data-adj="${esc(item.id)}:1">+</button>
       </div>`;
+
   return `
     <div class="swipe-wrap" data-swipe-id="${esc(item.id)}" data-paused="${item.paused?1:0}">
       <div class="swipe-action">${item.paused ? 'Delete item' : 'Remove stock'}</div>
       <div class="item ${item.paused?'muted':''}" data-id="${esc(item.id)}">
+        ${cbHtml}
         <span class="dot" style="background:${color}"></span>
         <div class="item-main" data-open="${esc(item.id)}">
           <div class="item-name">${esc(item.name)}</div>
@@ -1118,29 +848,93 @@ function renderItemCard(item){
             ${badges}
           </div>
         </div>
-        ${rightControl}
+        ${isMultiSelectMode ? '' : rightControl}
       </div>
     </div>`;
 }
+
 function esc(s){ return String(s??'').replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+/* ---------- multi-select / bulk edit ---------- */
+document.getElementById('multiSelectBtn').onclick = ()=>{
+  isMultiSelectMode = !isMultiSelectMode;
+  document.getElementById('multiSelectBtn').classList.toggle('active', isMultiSelectMode);
+  if(!isMultiSelectMode) selectedItemIds.clear();
+  renderList();
+};
+
+document.getElementById('listRoot').addEventListener('change', e=>{
+  const id = e.target.closest('[data-multicheck]')?.dataset.multicheck;
+  if(id){
+    if(e.target.checked) selectedItemIds.add(id); else selectedItemIds.delete(id);
+    updateBulkBar();
+  }
+});
+
+function updateBulkBar(){
+  const bar = document.getElementById('bulkBar');
+  const countEl = document.getElementById('bulkCount');
+  if(isMultiSelectMode){
+    bar.classList.add('show');
+    countEl.textContent = `${selectedItemIds.size} selected`;
+  } else {
+    bar.classList.remove('show');
+  }
+}
+
+document.getElementById('bulkCancelBtn').onclick = ()=>{
+  isMultiSelectMode = false;
+  selectedItemIds.clear();
+  document.getElementById('multiSelectBtn').classList.remove('active');
+  renderList();
+};
+
+document.getElementById('bulkActionSelect').onchange = async e=>{
+  const act = e.target.value;
+  e.target.value = '';
+  if(selectedItemIds.size === 0){ showToast("Select at least one item"); return; }
+  
+  if(act === 'delete'){
+    if(!confirm(`Delete ${selectedItemIds.size} selected items?`)) return;
+    const batch = db.batch();
+    selectedItemIds.forEach(id=> batch.delete(db.collection('items').doc(id)));
+    await batch.commit();
+    showToast(`Deleted ${selectedItemIds.size} items`);
+    selectedItemIds.clear(); renderList(); return;
+  }
+  
+  if(act === 'shop' || act === 'location' || act === 'category'){
+    const listMap = {shop: shops, location: locations, category: categories};
+    const val = prompt(`Enter new ${act} for ${selectedItemIds.size} items:\nAvailable: ${listMap[act].join(', ')}`);
+    if(!val) return;
+    const batch = db.batch();
+    selectedItemIds.forEach(id=>{
+      batch.update(db.collection('items').doc(id), { [act]: val.trim(), updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
+    });
+    await batch.commit();
+    showToast(`Updated ${act} for ${selectedItemIds.size} items`);
+    selectedItemIds.clear(); renderList();
+  }
+};
 
 /* ---------- item CRUD ---------- */
 document.getElementById('addFab').onclick = ()=> openItemSheet(null);
 const listRoot = document.getElementById('listRoot');
 let suppressNextClick = false;
+
 listRoot.addEventListener('click', e=>{
+  if(isMultiSelectMode) return;
   if(suppressNextClick){ suppressNextClick = false; return; }
   const openId = e.target.closest('[data-open]')?.dataset.open;
   if(openId){ openItemSheet(items.find(i=>i.id===openId)); return; }
   const adj = e.target.closest('[data-adj]')?.dataset.adj;
   if(adj){
-    const [id, delta] = adj.split(':');
-    quickAdjust(id, Number(delta));
-    return;
+    const [id, delta] = adj.split(':'); quickAdjust(id, Number(delta)); return;
   }
   const revive = e.target.closest('[data-revive]')?.dataset.revive;
   if(revive){ reviveItem(revive); }
 });
+
 async function reviveItem(id){
   try{
     await db.collection('items').doc(id).update({
@@ -1148,108 +942,33 @@ async function reviveItem(id){
     });
     const item = items.find(i=>i.id===id);
     openItemSheet(item ? {...item, paused:false} : null);
-    showToast("Restocked — update the quantity and save");
-    if(item) logActivity('restocked', `Restocked "${item.name}"`);
+    showToast("Restocked — update quantity and save");
   }catch(err){ showToast("Couldn't restock: " + err.message); }
 }
 
-/* ---------- swipe gestures: swipe left = pause (active list) or delete (paused list) ---------- */
-const SWIPE_THRESHOLD = -90;
-let swipeState = null;
-listRoot.addEventListener('pointerdown', e=>{
-  const wrap = e.target.closest('.swipe-wrap');
-  if(!wrap) return;
-  swipeState = {
-    id: wrap.dataset.swipeId,
-    paused: wrap.dataset.paused === '1',
-    itemEl: wrap.querySelector('.item'),
-    startX: e.clientX, startY: e.clientY,
-    dx: 0, dragging: false, pointerId: e.pointerId
-  };
-});
-listRoot.addEventListener('pointermove', e=>{
-  if(!swipeState || swipeState.pointerId !== e.pointerId) return;
-  const dx = e.clientX - swipeState.startX;
-  const dy = e.clientY - swipeState.startY;
-  if(!swipeState.dragging){
-    if(Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy)){
-      swipeState.dragging = true;
-      swipeState.itemEl.style.transition = 'none';
-    } else if(Math.abs(dy) > 10){
-      swipeState = null;
-      return;
-    } else {
-      return;
+/* ---------- fuzzy matching / similarity ---------- */
+function isSimilarName(str1, str2){
+  const a = str1.toLowerCase().trim();
+  const b = str2.toLowerCase().trim();
+  if(!a || !b) return false;
+  if(a === b) return true;
+  if(a.includes(b) || b.includes(a)) return true;
+  if(Math.abs(a.length - b.length) > 2) return false;
+  let matrix = [];
+  for(let i = 0; i <= b.length; i++){ matrix[i] = [i]; }
+  for(let j = 0; j <= a.length; j++){ matrix[0][j] = j; }
+  for(let i = 1; i <= b.length; i++){
+    for(let j = 1; j <= a.length; j++){
+      if(b.charAt(i-1) === a.charAt(j-1)){ matrix[i][j] = matrix[i-1][j-1]; } 
+      else { matrix[i][j] = Math.min(matrix[i-1][j-1]+1, matrix[i][j-1]+1, matrix[i-1][j]+1); }
     }
   }
-  swipeState.dx = Math.min(0, dx);
-  swipeState.itemEl.style.transform = `translateX(${swipeState.dx}px)`;
-});
-function finishSwipe(){
-  if(!swipeState) return;
-  const {itemEl, dx, id, paused, dragging} = swipeState;
-  itemEl.style.transition = 'transform .18s ease';
-  if(dragging){
-    suppressNextClick = true;
-    if(dx < SWIPE_THRESHOLD){
-      itemEl.style.transform = 'translateX(-100%)';
-      setTimeout(()=>{ paused ? swipeDelete(id) : swipePause(id); }, 160);
-    } else {
-      itemEl.style.transform = 'translateX(0)';
-    }
-  }
-  swipeState = null;
-}
-listRoot.addEventListener('pointerup', e=>{
-  if(!swipeState || swipeState.pointerId !== e.pointerId) return;
-  finishSwipe();
-});
-listRoot.addEventListener('pointercancel', e=>{
-  if(!swipeState || swipeState.pointerId !== e.pointerId) return;
-  finishSwipe();
-});
-async function swipePause(id){
-  const item = items.find(i=>i.id===id);
-  if(!item) return;
-  const prevQty = item.quantity;
-  const prevExpiry = item.expiryDate || null;
-  const prevBought = item.boughtDate || null;
-  try{
-    await db.collection('items').doc(id).update({
-      paused:true, quantity:0, expiryDate:null, boughtDate:null,
-      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-    logActivity('stock_removed', `Removed stock for "${item.name}"`);
-    showUndoToast(`Stock removed for "${item.name}"`, async ()=>{
-      await db.collection('items').doc(id).update({
-        paused:false, quantity:prevQty, expiryDate:prevExpiry, boughtDate:prevBought,
-        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-      });
-    });
-  }catch(err){ showToast("Couldn't remove stock: " + err.message); }
-}
-async function swipeDelete(id){
-  const item = items.find(i=>i.id===id);
-  if(!item) return;
-  const snapshot = {...item};
-  delete snapshot.id;
-  try{
-    await db.collection('items').doc(id).delete();
-    logActivity('deleted', `Deleted "${item.name}"`);
-    showUndoToast(`"${item.name}" deleted`, async ()=>{
-      snapshot.updatedAt = firebase.firestore.FieldValue.serverTimestamp();
-      await db.collection('items').add(snapshot);
-    });
-  }catch(err){ showToast("Couldn't delete: " + err.message); }
+  return matrix[b.length][a.length] <= 2;
 }
 
 let currentItemPaused = false;
 let isDuplicateFlow = false;
-function findDuplicateItem(name, excludeId){
-  const norm = name.trim().toLowerCase();
-  if(!norm) return null;
-  return items.find(i => i.id !== excludeId && i.name.trim().toLowerCase() === norm);
-}
+
 function openItemSheet(item){
   isDuplicateFlow = false;
   document.getElementById('itemFormTitle').textContent = item ? 'Edit item' : 'Add item';
@@ -1259,7 +978,13 @@ function openItemSheet(item){
   document.getElementById('fQty').value = item?.quantity ?? 1;
   document.getElementById('fUnit').value = item?.unit || 'pcs';
   populateSelects();
-  document.getElementById('fCategory').value = item?.category || categories[0];
+  
+  if(!item && activeFilters.category){
+    document.getElementById('fCategory').value = activeFilters.category;
+  } else {
+    document.getElementById('fCategory').value = item?.category || categories[0];
+  }
+  
   document.getElementById('fSubcategory').value = item?.subcategory || '';
   document.getElementById('fShop').value = item?.shop || (shops.includes('Other') ? 'Other' : shops[0]);
   document.getElementById('fLocation').value = item?.location || '';
@@ -1274,22 +999,27 @@ function openItemSheet(item){
   document.getElementById('deleteItemBtn').style.display = item ? 'block' : 'none';
   document.getElementById('duplicateItemBtn').style.display = item ? 'block' : 'none';
   ['fCategoryNewWrap','fSubcategoryNewWrap','fShopNewWrap','fLocationNewWrap'].forEach(id=>document.getElementById(id).style.display='none');
-  document.getElementById('itemOverlay').classList.add('show');
-  history.pushState({overlay:'itemOverlay'}, '');
+  
+  openOverlay('itemOverlay');
+  setTimeout(()=> document.getElementById('fName').focus(), 100);
 }
+
 document.getElementById('fName').addEventListener('input', ()=>{
   const warnEl = document.getElementById('fNameWarning');
   if(isDuplicateFlow){ warnEl.style.display = 'none'; return; }
   const id = document.getElementById('editingId').value;
   const name = document.getElementById('fName').value;
-  const dup = findDuplicateItem(name, id);
-  if(dup){
-    warnEl.textContent = `"${dup.name}" already exists${dup.paused ? ' (in Paused)' : ''} — you can still add this as a separate entry.`;
+  if(!name.trim()){ warnEl.style.display = 'none'; return; }
+  
+  const similar = items.find(i => i.id !== id && isSimilarName(name, i.name));
+  if(similar){
+    warnEl.textContent = `⚠️ Similar item exists: "${similar.name}" (${similar.quantity} ${similar.unit||''})`;
     warnEl.style.display = 'block';
   } else {
     warnEl.style.display = 'none';
   }
 });
+
 document.getElementById('duplicateItemBtn').onclick = ()=>{
   isDuplicateFlow = true;
   document.getElementById('editingId').value = '';
@@ -1300,260 +1030,8 @@ document.getElementById('duplicateItemBtn').onclick = ()=>{
   document.getElementById('togglePauseBtn').style.display = 'none';
   document.getElementById('wasteItemBtn').style.display = 'none';
   document.getElementById('fName').focus();
-  showToast("Now creating a copy — adjust quantity/expiry, then save");
+  showToast("Creating a copy — adjust fields and save");
 };
-
-/* ---------- waste tracking ---------- */
-function todayStr(){
-  const d = new Date();
-  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
-}
-document.getElementById('wasteItemBtn').onclick = ()=>{
-  const id = document.getElementById('editingId').value;
-  if(!id) return;
-  const item = items.find(i=>i.id===id);
-  if(!item) return;
-  document.getElementById('itemOverlay').classList.remove('show');
-  openLogWasteSheet(item);
-  history.replaceState({overlay:'logWasteOverlay'}, '');
-};
-function openLogWasteSheet(item){
-  document.getElementById('lwFormTitle').textContent = 'Log waste';
-  document.getElementById('lwEntryId').value = '';
-  document.getElementById('lwItemId').value = item.id;
-  document.getElementById('lwItemLabel').textContent = `Throwing out from: ${item.name}`;
-  document.getElementById('lwQty').value = item.quantity;
-  document.getElementById('lwUnit').value = item.unit || 'pcs';
-  populateReasonSelect();
-  document.getElementById('lwReason').value = wasteReasons[0];
-  document.getElementById('lwReasonNewWrap').style.display = 'none';
-  document.getElementById('lwDate').value = todayStr();
-  document.getElementById('deleteWasteBtn').style.display = 'none';
-  document.getElementById('logWasteConfirmBtn').textContent = 'Log waste';
-  document.getElementById('logWasteOverlay').classList.add('show');
-}
-function openEditWasteSheet(entry){
-  document.getElementById('wasteHistoryOverlay').classList.remove('show');
-  document.getElementById('lwFormTitle').textContent = 'Edit waste entry';
-  document.getElementById('lwEntryId').value = entry.id;
-  document.getElementById('lwItemId').value = entry.itemId || '';
-  document.getElementById('lwItemLabel').textContent = entry.name;
-  document.getElementById('lwQty').value = entry.quantity;
-  document.getElementById('lwUnit').value = entry.unit || 'pcs';
-  populateReasonSelect();
-  document.getElementById('lwReason').value = entry.reason || wasteReasons[0];
-  document.getElementById('lwReasonNewWrap').style.display = 'none';
-  document.getElementById('lwDate').value = entry.date || todayStr();
-  document.getElementById('deleteWasteBtn').style.display = 'block';
-  document.getElementById('logWasteConfirmBtn').textContent = 'Save changes';
-  document.getElementById('logWasteOverlay').classList.add('show');
-  history.replaceState({overlay:'logWasteOverlay'}, '');
-}
-document.getElementById('logWasteConfirmBtn').onclick = async ()=>{
-  const entryId = document.getElementById('lwEntryId').value;
-  let qty = Number(document.getElementById('lwQty').value);
-  if(!qty || qty <= 0){ showToast("Enter how much you're throwing out"); return; }
-  const wasteUnit = document.getElementById('lwUnit').value;
-  const reasonSel = document.getElementById('lwReason');
-  const reason = reasonSel.value === '__new__' ? wasteReasons[0] : reasonSel.value;
-  const date = document.getElementById('lwDate').value || todayStr();
-
-  if(entryId){
-    // Editing an existing entry only corrects the record — it never touches inventory.
-    try{
-      await db.collection('waste').doc(entryId).update({ quantity: qty, unit: wasteUnit, reason, date });
-      closeOverlay('logWasteOverlay');
-      showToast("Waste entry updated");
-    }catch(err){ showToast("Couldn't save: " + err.message); }
-    return;
-  }
-
-  const itemId = document.getElementById('lwItemId').value;
-  const item = items.find(i=>i.id===itemId);
-  if(!item){ showToast("That item couldn't be found — it may have changed."); closeOverlay('logWasteOverlay'); return; }
-
-  const unitsMatch = wasteUnit === (item.unit || '');
-  if(unitsMatch && qty > item.quantity) qty = item.quantity;
-
-  try{
-    await db.collection('waste').add({
-      name: item.name,
-      quantity: qty,
-      unit: wasteUnit || null,
-      category: item.category || null,
-      reason,
-      itemId: item.id,
-      date,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-    if(unitsMatch){
-      const remaining = Math.max(0, item.quantity - qty);
-      await db.collection('items').doc(item.id).update({
-        quantity: remaining, updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-      });
-      closeOverlay('logWasteOverlay');
-      showToast(`Threw out ${qty} ${wasteUnit} — inventory now ${remaining} ${wasteUnit}`);
-    } else {
-      closeOverlay('logWasteOverlay');
-      showToast(`Logged — unit "${wasteUnit}" doesn't match the item's "${item.unit||''}", so inventory wasn't changed.`, 4200);
-    }
-    logActivity('wasted', `Threw out ${qty} ${wasteUnit} of "${item.name}" (${reason})`);
-  }catch(err){ showToast("Couldn't log waste: " + err.message); }
-};
-
-/* ---------- waste history view ---------- */
-document.getElementById('wasteHistoryBtn').onclick = ()=>{
-  document.getElementById('wasteHistoryOverlay').classList.add('show');
-  history.pushState({overlay:'wasteHistoryOverlay'}, '');
-};
-
-/* ---------- activity log view ---------- */
-document.getElementById('activityBtn').onclick = ()=>{
-  document.getElementById('activityOverlay').classList.add('show');
-  history.pushState({overlay:'activityOverlay'}, '');
-};
-function formatActivityTime(ts){
-  if(!ts || !ts.toDate) return 'just now';
-  const d = ts.toDate();
-  const now = new Date();
-  const time = d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-  if(d.toDateString() === now.toDateString()) return `Today, ${time}`;
-  const yest = new Date(now); yest.setDate(now.getDate()-1);
-  if(d.toDateString() === yest.toDateString()) return `Yesterday, ${time}`;
-  return d.toLocaleDateString([], {month:'short', day:'numeric'}) + ', ' + time;
-}
-const ACTIVITY_GROUP_WINDOW_MS = 15 * 60 * 1000; // taps within 15 min of each other, same item/unit/person, merge into one line
-function withinGroupWindow(a, b){
-  if(!a.createdAt || !a.createdAt.toDate || !b.createdAt || !b.createdAt.toDate) return false;
-  return Math.abs(a.createdAt.toDate() - b.createdAt.toDate()) <= ACTIVITY_GROUP_WINDOW_MS;
-}
-function groupActivityLog(log){
-  const grouped = [];
-  for(const entry of log){
-    const isQty = entry.type === 'increase' || entry.type === 'decrease';
-    const last = grouped[grouped.length - 1];
-    if(isQty && last && last.type === entry.type && last.itemName === entry.itemName &&
-       last.unit === entry.unit && last.userEmail === entry.userEmail && withinGroupWindow(last, entry)){
-      last.quantity = (last.quantity || 0) + (entry.quantity || 0);
-      last.count = (last.count || 1) + 1;
-    } else {
-      grouped.push(Object.assign({}, entry, {count: 1}));
-    }
-  }
-  return grouped;
-}
-function renderActivityEntry(entry){
-  const who = entry.userEmail ? esc(entry.userEmail.split('@')[0]) : 'Someone';
-  const isQty = entry.type === 'increase' || entry.type === 'decrease';
-  let msg = entry.message;
-  if(isQty && entry.itemName){
-    const verb = entry.type === 'increase' ? 'Added' : 'Used';
-    msg = `${verb} ${entry.quantity} ${entry.unit||''} of "${entry.itemName}"`.replace(/\s+/g,' ').trim();
-    if(entry.count > 1) msg += ` — ${entry.count} taps`;
-  }
-  return `
-    <div class="activity-row">
-      <div class="item-name">${esc(msg)}</div>
-      <div class="item-meta"><span>${who}</span><span>${formatActivityTime(entry.createdAt)}</span></div>
-    </div>`;
-}
-function renderActivityList(){
-  const listEl = document.getElementById('activityList');
-  if(!listEl) return;
-  if(activityLog.length===0){
-    listEl.innerHTML = `<div class="empty"><h3>No activity yet</h3><p>Adding, using, restocking, or throwing out items will show up here.</p></div>`;
-    return;
-  }
-  listEl.innerHTML = groupActivityLog(activityLog).map(renderActivityEntry).join('');
-}
-
-function renderWasteEntry(entry){
-  return `
-    <div class="waste-row" data-editwaste="${esc(entry.id)}">
-      <div class="waste-row-main">
-        <div class="item-name">${esc(entry.name)}</div>
-        <div class="item-meta">
-          <span class="mono">${esc(entry.quantity)} ${esc(entry.unit||'')}</span>
-          <span class="badge waste-reason">${esc(entry.reason)}</span>
-          <span>${esc(entry.date||'')}</span>
-        </div>
-      </div>
-    </div>`;
-}
-function renderWasteHistory(){
-  const listEl = document.getElementById('wasteHistoryList');
-  const summaryEl = document.getElementById('wasteSummary');
-  if(!listEl) return;
-  if(wasteLog.length===0){
-    summaryEl.innerHTML = '';
-    listEl.innerHTML = `<div class="empty"><h3>No waste logged yet</h3><p>When you toss something, log it from that item's edit screen.</p></div>`;
-    return;
-  }
-  const monthPrefix = todayStr().slice(0,7);
-  const thisMonth = wasteLog.filter(w=>(w.date||'').startsWith(monthPrefix));
-  const catCounts = {};
-  thisMonth.forEach(w=>{ const c = w.category || 'Uncategorized'; catCounts[c] = (catCounts[c]||0) + 1; });
-  let topCat = null, topCount = 0;
-  Object.entries(catCounts).forEach(([c,n])=>{ if(n>topCount){ topCat=c; topCount=n; } });
-
-  summaryEl.innerHTML = `
-    <div class="waste-stat"><strong>${thisMonth.length}</strong> item${thisMonth.length===1?'':'s'} wasted this month</div>
-    ${topCat ? `<div class="waste-stat">Most wasted category: <strong>${esc(topCat)}</strong> (${topCount}×)</div>` : ''}
-  `;
-  listEl.innerHTML = wasteLog.map(renderWasteEntry).join('');
-}
-document.getElementById('wasteHistoryList').addEventListener('click', e=>{
-  const id = e.target.closest('[data-editwaste]')?.dataset.editwaste;
-  if(!id) return;
-  const entry = wasteLog.find(w=>w.id===id);
-  if(entry) openEditWasteSheet(entry);
-});
-document.getElementById('deleteWasteBtn').onclick = async ()=>{
-  const entryId = document.getElementById('lwEntryId').value;
-  if(!entryId) return;
-  if(!confirm("Delete this waste log entry? This only removes the record — it won't change any item's quantity.")) return;
-  try{
-    await db.collection('waste').doc(entryId).delete();
-    closeOverlay('logWasteOverlay');
-    showToast("Waste entry deleted");
-  }catch(err){ showToast("Couldn't delete: " + err.message); }
-};
-
-document.querySelectorAll('[data-close]').forEach(btn=>{
-  btn.onclick = ()=> closeOverlay(btn.dataset.close);
-});
-document.querySelectorAll('.overlay').forEach(ov=>{
-  ov.addEventListener('click', e=>{ if(e.target===ov) closeOverlay(ov.id); });
-});
-
-['fCategory','fSubcategory','fShop','fLocation','lwReason'].forEach(id=>{
-  document.getElementById(id).addEventListener('change', e=>{
-    const wrapId = id + 'NewWrap';
-    document.getElementById(wrapId).style.display = e.target.value === '__new__' ? 'flex' : 'none';
-  });
-});
-document.querySelectorAll('[data-addnew-field]').forEach(btn=>{
-  btn.onclick = async ()=>{
-    const field = btn.dataset.addnewField;
-    const selId = btn.dataset.addnewTarget;
-    const inputId = selId + 'New';
-    const val = document.getElementById(inputId).value.trim();
-    if(!val) return;
-
-    const arr = localArrayFor(field);
-    if(arr && !arr.includes(val)) arr.push(val);
-    if(field === 'wasteReasons'){ populateReasonSelect(); } else { populateSelects(); }
-    document.getElementById(selId).value = val;
-    document.getElementById(inputId).value = '';
-    document.getElementById(selId + 'NewWrap').style.display = 'none';
-
-    try{
-      await addListValue(field, val);
-    }catch(err){
-      showToast("Couldn't save the new value: " + err.message);
-    }
-  };
-});
 
 async function saveItemFromForm(opts){
   opts = opts || {};
@@ -1575,89 +1053,209 @@ async function saveItemFromForm(opts){
     notes: document.getElementById('fNotes').value.trim(),
     updatedAt: firebase.firestore.FieldValue.serverTimestamp()
   };
+  if(!id) data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+
   try{
     if(id){ await db.collection('items').doc(id).update(data); }
     else{ await db.collection('items').add(data); }
     return true;
   }catch(err){ showToast("Couldn't save: " + err.message); return false; }
 }
-document.getElementById('saveItemBtn').onclick = async ()=>{
+
+const handleSaveAction = async ()=>{
   const id = document.getElementById('editingId').value;
-  const name = document.getElementById('fName').value.trim();
-  const qty = document.getElementById('fQty').value;
-  const unit = document.getElementById('fUnit').value;
-  if(!id && !isDuplicateFlow){
-    const dup = findDuplicateItem(name, id);
-    if(dup){
-      const proceed = confirm(`"${dup.name}" already exists${dup.paused ? ' (in Paused)' : ''}. Add "${name}" as a separate entry anyway?`);
-      if(!proceed) return;
-    }
-  }
   const ok = await saveItemFromForm({});
   if(ok){
     closeOverlay('itemOverlay');
     showToast(id ? "Item updated" : "Item added");
-    logActivity(id ? 'edited' : 'created', id ? `Edited "${name}"` : `Added "${name}" (${qty} ${unit})`);
   }
 };
+
+document.getElementById('saveItemBtn').onclick = handleSaveAction;
+document.getElementById('topSaveItemBtn').onclick = handleSaveAction;
+
 document.getElementById('togglePauseBtn').onclick = async ()=>{
   const name = document.getElementById('fName').value.trim();
   const newPaused = !currentItemPaused;
   const ok = await saveItemFromForm({paused:newPaused, clearStock:newPaused});
   if(ok){
     closeOverlay('itemOverlay');
-    showToast(newPaused ? "Stock removed — quantity and dates cleared" : "Restocked");
-    logActivity(newPaused ? 'stock_removed' : 'restocked', newPaused ? `Removed stock for "${name}"` : `Restocked "${name}"`);
+    showToast(newPaused ? "Stock removed" : "Restocked");
   }
 };
+
 function valOrDefault(id){
   const el = document.getElementById(id);
   return el.value === '__new__' ? el.options[0].value : el.value;
 }
+
 document.getElementById('deleteItemBtn').onclick = async ()=>{
   const id = document.getElementById('editingId').value;
   if(!id) return;
-  const name = document.getElementById('fName').value.trim();
   if(!confirm("Delete this item?")) return;
   await db.collection('items').doc(id).delete();
   closeOverlay('itemOverlay');
   showToast("Item deleted");
-  logActivity('deleted', `Deleted "${name}"`);
 };
+
 async function quickAdjust(id, delta){
   const item = items.find(i=>i.id===id);
   if(!item) return;
   const next = Math.max(0, (item.quantity||0) + delta);
   await db.collection('items').doc(id).update({quantity: next, updatedAt: firebase.firestore.FieldValue.serverTimestamp()});
-  const verb = delta > 0 ? 'Added' : 'Used';
-  logActivity(delta > 0 ? 'increase' : 'decrease', `${verb} ${Math.abs(delta)} ${item.unit||''} of "${item.name}"`, {
-    itemName: item.name, quantity: Math.abs(delta), unit: item.unit || null
-  });
 }
 
-/* ---------- search / sort / filter ---------- */
-document.getElementById('searchInput').addEventListener('input', e=>{
-  searchTerm = e.target.value; renderList();
+/* ---------- waste & activity ---------- */
+document.getElementById('wasteItemBtn').onclick = ()=>{
+  const id = document.getElementById('editingId').value;
+  const item = items.find(i=>i.id===id);
+  if(!item) return;
+  closeOverlay('itemOverlay');
+  openLogWasteSheet(item);
+};
+
+function openLogWasteSheet(item){
+  document.getElementById('lwFormTitle').textContent = 'Log waste';
+  document.getElementById('lwEntryId').value = '';
+  document.getElementById('lwItemId').value = item.id;
+  document.getElementById('lwItemLabel').textContent = `Throwing out from: ${item.name}`;
+  document.getElementById('lwQty').value = item.quantity;
+  document.getElementById('lwUnit').value = item.unit || 'pcs';
+  populateReasonSelect();
+  document.getElementById('lwReason').value = wasteReasons[0];
+  document.getElementById('lwDate').value = todayStr();
+  document.getElementById('deleteWasteBtn').style.display = 'none';
+  openOverlay('logWasteOverlay');
+}
+
+function todayStr(){
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+
+document.getElementById('logWasteConfirmBtn').onclick = async ()=>{
+  let qty = Number(document.getElementById('lwQty').value);
+  if(!qty || qty <= 0){ showToast("Enter quantity thrown out"); return; }
+  const wasteUnit = document.getElementById('lwUnit').value;
+  const reason = document.getElementById('lwReason').value;
+  const date = document.getElementById('lwDate').value || todayStr();
+  const itemId = document.getElementById('lwItemId').value;
+  const item = items.find(i=>i.id===itemId);
+
+  try{
+    await db.collection('waste').add({
+      name: item ? item.name : 'Unknown', quantity: qty, unit: wasteUnit,
+      category: item ? item.category : null, reason, itemId, date,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    if(item && wasteUnit === (item.unit || '')){
+      const remaining = Math.max(0, item.quantity - qty);
+      await db.collection('items').doc(item.id).update({quantity: remaining, updatedAt: firebase.firestore.FieldValue.serverTimestamp()});
+    }
+    closeOverlay('logWasteOverlay');
+    showToast("Waste logged");
+  }catch(err){ showToast("Error logging waste: " + err.message); }
+};
+
+document.getElementById('wasteHistoryBtn').onclick = ()=> openOverlay('wasteHistoryOverlay');
+document.getElementById('activityBtn').onclick = ()=> openOverlay('activityOverlay');
+
+function renderWasteHistory(){
+  const listEl = document.getElementById('wasteHistoryList');
+  if(!listEl) return;
+  if(wasteLog.length===0){ listEl.innerHTML = `<div class="empty"><h3>No waste logged yet</h3></div>`; return; }
+  listEl.innerHTML = wasteLog.map(w=>`
+    <div class="waste-row">
+      <div class="waste-row-main">
+        <div class="item-name">${esc(w.name)}</div>
+        <div class="item-meta"><span class="mono">${esc(w.quantity)} ${esc(w.unit||'')}</span><span>${esc(w.reason)}</span><span>${formatDate(w.date)}</span></div>
+      </div>
+    </div>`).join('');
+}
+
+function renderActivityList(){
+  const listEl = document.getElementById('activityList');
+  if(!listEl) return;
+  if(activityLog.length===0){ listEl.innerHTML = `<div class="empty"><h3>No activity yet</h3></div>`; return; }
+  listEl.innerHTML = activityLog.map(a=>`
+    <div class="activity-row">
+      <div class="item-name">${esc(a.message)}</div>
+      <div class="item-meta"><span>${a.userEmail ? esc(a.userEmail.split('@')[0]) : 'User'}</span></div>
+    </div>`).join('');
+}
+
+/* ---------- management & export ---------- */
+document.getElementById('manageBtn').onclick = ()=> openOverlay('manageOverlay');
+function renderManageSheet(){
+  renderManageGroup('manageCats', categories, 'categories');
+  renderManageGroup('manageSubcats', subcategories, 'subcategories');
+  renderManageGroup('manageShops', shops, 'shops');
+  renderManageGroup('manageLocations', locations, 'locations');
+  renderManageGroup('manageReasons', wasteReasons, 'wasteReasons');
+}
+function renderManageGroup(rootId, list, field){
+  document.getElementById(rootId).innerHTML = list.map(v=>
+    `<span class="manage-chip">${esc(v)}<button data-delvalue="${esc(v)}" data-delfield="${field}">✕</button></span>`
+  ).join('');
+}
+document.getElementById('manageOverlay').addEventListener('click', e=>{
+  const btn = e.target.closest('[data-delvalue]');
+  if(btn) deleteListValue(btn.dataset.delfield, btn.dataset.delvalue);
 });
+
+document.querySelectorAll('[data-manageadd]').forEach(btn=>{
+  btn.onclick = async ()=>{
+    const field = btn.dataset.manageadd;
+    const input = document.getElementById(field==='categories'?'manageCatsNew':field==='subcategories'?'manageSubcatsNew':field==='shops'?'manageShopsNew':field==='locations'?'manageLocationsNew':'manageReasonsNew');
+    const val = input.value.trim();
+    if(!val) return;
+    await addListValue(field, val);
+    input.value = '';
+  };
+});
+
+/* ---------- export ---------- */
+let exportState = { cats: new Set(['Food']), subcats: null, shop: null, location: null, lowOnly:false };
+document.getElementById('exportFab').onclick = ()=>{
+  renderExportFilters(); buildExportText(); openOverlay('exportOverlay');
+};
+function renderExportFilters(){
+  document.getElementById('exportCats').innerHTML = categories.map(c=>`<span class="chip ${exportState.cats.has(c)?'on':''}" data-excat="${esc(c)}">${esc(c)}</span>`).join('');
+}
+function buildExportText(){
+  let list = items.filter(i=> exportState.cats.has(i.category));
+  const out = document.getElementById('exportOut');
+  if(list.length===0){ out.textContent = "No items match these filters."; return; }
+  out.textContent = list.map(i=> `- ${i.name}: ${i.quantity} ${i.unit||''}` + (i.expiryDate ? ` (exp: ${formatDate(i.expiryDate)})` : '')).join('\n');
+}
+document.getElementById('copyBtn').onclick = async ()=>{
+  await navigator.clipboard.writeText(document.getElementById('exportOut').textContent);
+  showToast("Copied to clipboard");
+};
+
+/* ---------- ui & overlay navigation ---------- */
+function openOverlay(id){
+  document.getElementById(id).classList.add('show');
+  history.pushState({overlay:id}, '');
+}
+function closeOverlay(id){
+  if(history.state && history.state.overlay === id){ history.back(); } 
+  else { document.getElementById(id).classList.remove('show'); }
+}
+window.addEventListener('popstate', ()=>{
+  document.querySelectorAll('.overlay.show').forEach(ov=>ov.classList.remove('show'));
+});
+document.querySelectorAll('[data-close]').forEach(btn=> btn.onclick = ()=> closeOverlay(btn.dataset.close));
+document.querySelectorAll('.overlay').forEach(ov=> ov.addEventListener('click', e=>{ if(e.target===ov) closeOverlay(ov.id); }));
+
 document.getElementById('searchBtn').onclick = ()=>{
   const row = document.getElementById('searchRow');
   const isOpen = row.style.display !== 'none';
-  if(isOpen){
-    row.style.display = 'none';
-    document.getElementById('searchInput').value = '';
-    searchTerm = '';
-    renderList();
-  } else {
-    row.style.display = 'block';
-    document.getElementById('searchInput').focus();
-  }
-  document.getElementById('searchBtn').classList.toggle('active', !isOpen);
+  row.style.display = isOpen ? 'none' : 'block';
+  if(!isOpen) document.getElementById('searchInput').focus();
 };
-document.getElementById('sortBtn').addEventListener('click', ()=>{
-  renderSortOptions();
-  document.getElementById('sortOverlay').classList.add('show');
-  history.pushState({overlay:'sortOverlay'}, '');
-});
+document.getElementById('searchInput').addEventListener('input', e=>{ searchTerm = e.target.value; renderList(); });
+document.getElementById('sortBtn').onclick = ()=>{ renderSortOptions(); openOverlay('sortOverlay'); };
 document.getElementById('filterRow').addEventListener('click', e=>{
   const cat = e.target.closest('[data-filter-cat]')?.dataset.filterCat;
   if(cat===undefined) return;
@@ -1665,178 +1263,27 @@ document.getElementById('filterRow').addEventListener('click', e=>{
   renderList();
 });
 
-/* ---------- export ---------- */
-let exportState = { cats: new Set(['Food']), subcats: null, shop: null, location: null, lowOnly:false };
-function allSubcatsSelected(){
-  const present = new Set(subcategories);
-  present.add('__none__');
-  return present;
-}
-document.getElementById('exportFab').onclick = ()=>{
-  if(exportState.subcats === null) exportState.subcats = allSubcatsSelected();
-  renderExportFilters();
-  buildExportText();
-  document.getElementById('exportOverlay').classList.add('show');
-  history.pushState({overlay:'exportOverlay'}, '');
-};
-document.getElementById('exportCats').addEventListener('click', e=>{
-  const c = e.target.closest('[data-excat]')?.dataset.excat;
-  if(c===undefined) return;
-  if(exportState.cats.has(c)) exportState.cats.delete(c); else exportState.cats.add(c);
-  renderExportFilters(); buildExportText();
-});
-document.getElementById('exportCatsQuick').addEventListener('click', e=>{
-  if(e.target.closest('[data-excat-all]')){
-    exportState.cats = new Set(categories);
-  } else if(e.target.closest('[data-excat-none]')){
-    exportState.cats = new Set();
-  } else return;
-  renderExportFilters(); buildExportText();
-});
-document.getElementById('exportSubcats').addEventListener('click', e=>{
-  const s = e.target.closest('[data-exsubcat]')?.dataset.exsubcat;
-  if(s===undefined) return;
-  if(exportState.subcats.has(s)) exportState.subcats.delete(s); else exportState.subcats.add(s);
-  renderExportFilters(); buildExportText();
-});
-document.getElementById('exportSubcatsQuick').addEventListener('click', e=>{
-  if(e.target.closest('[data-exsubcat-all]')){
-    exportState.subcats = allSubcatsSelected();
-  } else if(e.target.closest('[data-exsubcat-none]')){
-    exportState.subcats = new Set();
-  } else return;
-  renderExportFilters(); buildExportText();
-});
-document.getElementById('exportShops').addEventListener('click', e=>{
-  const s = e.target.closest('[data-exshop]')?.dataset.exshop;
-  if(s===undefined) return;
-  exportState.shop = s === '' ? null : s;
-  renderExportFilters(); buildExportText();
-});
-document.getElementById('exportLocations').addEventListener('click', e=>{
-  const l = e.target.closest('[data-exlocation]')?.dataset.exlocation;
-  if(l===undefined) return;
-  exportState.location = l === '' ? null : l;
-  renderExportFilters(); buildExportText();
-});
-document.getElementById('exportLowOnly').addEventListener('change', e=>{
-  exportState.lowOnly = e.target.checked; buildExportText();
-});
-function buildExportText(){
-  let list = items.filter(i=>{
-    if(!exportState.cats.has(i.category)) return false;
-    if(exportState.subcats){
-      const key = i.subcategory || '__none__';
-      if(!exportState.subcats.has(key)) return false;
-    }
-    if(exportState.shop && i.shop !== exportState.shop) return false;
-    if(exportState.location && i.location !== exportState.location) return false;
-    if(exportState.lowOnly){
-      const fresh = freshnessStatus(i);
-      const low = lowStockStatus(i);
-      const soonOrExpired = fresh && (fresh.level==='soon'||fresh.level==='expired');
-      if(!soonOrExpired && !low) return false;
-    }
-    return true;
-  });
-  list.sort((a,b)=>a.name.localeCompare(b.name));
-  const out = document.getElementById('exportOut');
-  if(list.length===0){ out.textContent = "No items match these filters."; return; }
-  const lines = list.map(i=>{
-    let line = `- ${i.name}: ${i.quantity} ${i.unit||''}`.trim();
-    if(i.expiryDate) line += ` (expires ${i.expiryDate})`;
-    if(i.notes) line += ` — ${i.notes}`;
-    return line;
-  });
-  out.textContent = lines.join('\n');
-}
-document.getElementById('copyBtn').onclick = async ()=>{
-  const text = document.getElementById('exportOut').textContent;
-  try{
-    await navigator.clipboard.writeText(text);
-    showToast("Copied to clipboard");
-  }catch{
-    showToast("Couldn't copy — select and copy manually");
-  }
-};
-
-/* ---------- toast ---------- */
-/* ---------- overlay open/close, back-button aware ---------- */
-function openOverlay(id){
-  document.getElementById(id).classList.add('show');
-  history.pushState({overlay:id}, '');
-}
-function closeOverlay(id){
-  if(history.state && history.state.overlay === id){
-    history.back();
-  } else {
-    document.getElementById(id).classList.remove('show');
-  }
-}
-window.addEventListener('popstate', ()=>{
-  document.querySelectorAll('.overlay.show').forEach(ov=>ov.classList.remove('show'));
-});
-
 let toastTimer;
-let toastUndoHandler = null;
-function showToast(msg, ms){
-  showUndoToast(msg, null, ms);
-}
-function showUndoToast(msg, undoFn, ms){
+function showToast(msg){
   const t = document.getElementById('toast');
   document.getElementById('toastMsg').textContent = msg;
-  const undoBtn = document.getElementById('toastUndo');
-  toastUndoHandler = undoFn;
-  undoBtn.style.display = undoFn ? 'inline' : 'none';
   t.classList.add('show');
   clearTimeout(toastTimer);
-  const duration = ms || (undoFn ? 4500 : 2200);
-  toastTimer = setTimeout(()=>{ t.classList.remove('show'); toastUndoHandler = null; }, duration);
+  toastTimer = setTimeout(()=> t.classList.remove('show'), 2500);
 }
-document.getElementById('toastUndo').onclick = async ()=>{
-  if(!toastUndoHandler) return;
-  const fn = toastUndoHandler;
-  toastUndoHandler = null;
-  document.getElementById('toast').classList.remove('show');
-  clearTimeout(toastTimer);
-  await fn();
-};
 
-/* ---------- theme toggle ---------- */
 const themeBtn = document.getElementById('themeBtn');
-const themeColorMeta = document.getElementById('themeColorMeta');
-function applyThemeButton(){
-  const isLight = document.documentElement.getAttribute('data-theme') === 'light';
-  themeBtn.textContent = isLight ? '☾' : '☀';
-  themeBtn.title = isLight ? 'Switch to dark theme' : 'Switch to light theme';
-  themeColorMeta.setAttribute('content', isLight ? '#F0F2EA' : '#1D1E19');
-}
 themeBtn.onclick = ()=>{
   const isLight = document.documentElement.getAttribute('data-theme') === 'light';
-  if(isLight){
-    document.documentElement.removeAttribute('data-theme');
-    try{ localStorage.setItem('shelf-theme','dark'); }catch(e){}
-  } else {
-    document.documentElement.setAttribute('data-theme','light');
-    try{ localStorage.setItem('shelf-theme','light'); }catch(e){}
-  }
-  applyThemeButton();
+  if(isLight){ document.documentElement.removeAttribute('data-theme'); localStorage.setItem('shelf-theme','dark'); }
+  else { document.documentElement.setAttribute('data-theme','light'); localStorage.setItem('shelf-theme','light'); }
 };
-applyThemeButton();
 
-/* ---------- number fields: select existing value so typing replaces it ---------- */
-['fQty','fThreshold','lwQty'].forEach(id=>{
-  document.getElementById(id).addEventListener('focus', e=> e.target.select());
-});
-
-/* ---------- PWA install / offline shell ---------- */
 if('serviceWorker' in navigator){
   window.addEventListener('load', ()=> navigator.serviceWorker.register('sw.js').catch(()=>{}));
 }
 
-/* init selects even before auth resolves, using defaults */
 populateSelects();
-renderExportFilters();
 </script>
 </body>
 </html>
